@@ -1,4 +1,4 @@
-import { Tag, Barcode, AlertCircle, Coins, Layers } from 'lucide-react';
+import { Tag, Barcode, AlertCircle, Coins, Layers, Trash2 } from 'lucide-react';
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
@@ -11,9 +11,15 @@ interface DLRCardProps {
     item?: { sku: string; description: string; reason: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  onDeleteRecord?: (record: DLRRecord) => void;
 }
 
-export const DLRCard: React.FC<DLRCardProps> = ({ record, onOpenModal, onToast }) => {
+export const DLRCard: React.FC<DLRCardProps> = ({
+  record,
+  onOpenModal,
+  onToast,
+  onDeleteRecord,
+}) => {
   const totalItemCost = record.cost * record.qty;
 
   // Department badge styles
@@ -29,8 +35,8 @@ export const DLRCard: React.FC<DLRCardProps> = ({ record, onOpenModal, onToast }
   const deptBadgeStyle = deptColors[record.departmentName] || deptColors.Unknown;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 space-y-4">
-      {/* Top Header: SKU, Department, Qty Badge */}
+    <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 space-y-4 relative group">
+      {/* Top Header: SKU, Department, Qty Badge, Delete button */}
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -54,14 +60,27 @@ export const DLRCard: React.FC<DLRCardProps> = ({ record, onOpenModal, onToast }
           </h4>
         </div>
 
-        {/* Qty Badge */}
-        <div className="flex flex-col items-end shrink-0">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Damaged Qty
-          </span>
-          <span className="font-bold text-sm sm:text-base text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-lg">
-            {record.qty} {record.qty === 1 ? 'pc' : 'pcs'}
-          </span>
+        {/* Qty Badge and Delete action */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Damaged Qty
+            </span>
+            <span className="font-bold text-sm sm:text-base text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-lg">
+              {record.qty} {record.qty === 1 ? 'pc' : 'pcs'}
+            </span>
+          </div>
+
+          {onDeleteRecord && (
+            <button
+              type="button"
+              onClick={() => onDeleteRecord(record)}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors ml-1 border border-transparent hover:border-rose-200"
+              title={`Delete record for SKU ${record.sku}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 

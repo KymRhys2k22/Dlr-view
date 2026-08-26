@@ -2,7 +2,7 @@ import React from 'react';
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
-import { AlertCircle, Layers } from 'lucide-react';
+import { AlertCircle, Layers, Trash2 } from 'lucide-react';
 
 interface DLRTableProps {
   records: DLRRecord[];
@@ -12,12 +12,14 @@ interface DLRTableProps {
     item?: { sku: string; description: string; reason: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  onDeleteRecord?: (record: DLRRecord) => void;
 }
 
 export const DLRTable: React.FC<DLRTableProps> = ({
   records,
   onOpenModal,
   onToast,
+  onDeleteRecord,
 }) => {
   const deptColors: Record<string, string> = {
     Houseware: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -41,6 +43,7 @@ export const DLRTable: React.FC<DLRTableProps> = ({
               <th className="py-3.5 px-3 text-right">Cost / Price</th>
               <th className="py-3.5 px-3 text-right">Total Loss</th>
               <th className="py-3.5 px-4">Evidence Photos (Qty / Dmg / Barcode)</th>
+              {onDeleteRecord && <th className="py-3.5 px-3 text-center">Action</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
@@ -148,6 +151,20 @@ export const DLRTable: React.FC<DLRTableProps> = ({
                       layout="row"
                     />
                   </td>
+
+                  {/* Delete Action Button */}
+                  {onDeleteRecord && (
+                    <td className="py-4 px-3 align-middle text-center">
+                      <button
+                        type="button"
+                        onClick={() => onDeleteRecord(record)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-200"
+                        title={`Delete report for SKU ${record.sku}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}

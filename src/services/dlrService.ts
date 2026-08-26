@@ -51,3 +51,28 @@ export async function fetchDLRRecordsFromSupabase(storeCode: string): Promise<DL
 
   return filtered.map((row, index) => normalizeDlrRecord(row, index));
 }
+
+/**
+ * Delete a DLR record from Supabase table by ID
+ */
+export async function deleteDLRRecordFromSupabase(recordId: string): Promise<void> {
+  // 1. Try deleting from 'dlr_unsigned'
+  let { error } = await supabase
+    .from('dlr_unsigned')
+    .delete()
+    .eq('id', recordId);
+
+  // If table 'dlr_unsigned' does not exist, fallback to 'dlr_records'
+  if (error && (error.code === 'PGRST205' || error.message.includes('not find the table') || error.code === '42P01')) {
+    const fallback = await supabase
+      .from('dlr_records')
+      .delete()
+      .eq('id', recordId);
+    error = fallback.error;
+  }
+
+  if (error) {
+    console.error('Supabase delete error:', error.message);
+    throw new Error(error.message || 'Failed to delete DLR record from database');
+  }
+}

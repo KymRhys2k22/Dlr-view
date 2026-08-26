@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { UserSession, DLRRecord, SummaryStats } from './types/dlr';
 import { DepartmentName } from './utils/getDepartmentName';
-import { fetchDLRRecordsFromSupabase } from './services/dlrService';
+import { fetchDLRRecordsFromSupabase, deleteDLRRecordFromSupabase } from './services/dlrService';
 import { LoginForm } from './components/LoginForm';
 import { Navbar } from './components/Navbar';
 import { Greeting } from './components/Greeting';
@@ -15,6 +15,7 @@ import { SkeletonLoader } from './components/SkeletonLoader';
 import { EmptyState } from './components/EmptyState';
 import { ErrorState } from './components/ErrorState';
 import { ImageModal } from './components/ImageModal';
+import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { LayoutGrid, Table as TableIcon } from 'lucide-react';
@@ -36,6 +37,10 @@ export const App: React.FC = () => {
   const [records, setRecords] = useState<DLRRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Delete state
+  const [recordToDelete, setRecordToDelete] = useState<DLRRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Filters state
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentName>('All Departments');
@@ -122,6 +127,26 @@ export const App: React.FC = () => {
     addToast('Logged out successfully.', 'info');
   };
 
+  // Confirm delete handler
+  const handleConfirmDelete = async () => {
+    if (!recordToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteDLRRecordFromSupabase(recordToDelete.id);
+      setRecords((prev) => prev.filter((r) => r.id !== recordToDelete.id));
+      addToast(
+        `Record for SKU ${recordToDelete.sku || 'item'} deleted successfully!`,
+        'success'
+      );
+      setRecordToDelete(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete record';
+      addToast(msg, 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Department item counts
   const departmentCounts = useMemo<Record<DepartmentName, number>>(() => {
     const counts: Record<DepartmentName, number> = {
@@ -158,7 +183,7 @@ export const App: React.FC = () => {
         }
       }
 
-      // 2. Search Filter (SKU, Description, UPC, Reason, SecondReason)
+      // 2. Search Filter (SKU, Description, UPC, Reason, SecondReason, SubDep)
       if (query) {
         const skuMatch = record.sku.toLowerCase().includes(query);
         const descMatch = record.description.toLowerCase().includes(query);
@@ -332,6 +357,7 @@ export const App: React.FC = () => {
                       records={filteredRecords}
                       onOpenModal={handleOpenImageModal}
                       onToast={addToast}
+                      onDeleteRecord={(rec) => setRecordToDelete(rec)}
                     />
                   </div>
                 ) : null}
@@ -348,6 +374,7 @@ export const App: React.FC = () => {
                       record={record}
                       onOpenModal={handleOpenImageModal}
                       onToast={addToast}
+                      onDeleteRecord={(rec) => setRecordToDelete(rec)}
                     />
                   ))}
                 </div>
@@ -377,6 +404,15 @@ export const App: React.FC = () => {
         itemInfo={modalImage.item}
         onClose={handleCloseImageModal}
         onToast={addToast}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={Boolean(recordToDelete)}
+        record={recordToDelete}
+        onClose={() => !isDeleting && setRecordToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
       />
 
       {/* PWA Install and Offline Prompt */}
