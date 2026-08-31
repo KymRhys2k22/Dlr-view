@@ -1,23 +1,36 @@
 import React from 'react';
-import { FileText, Layers, Coins, TrendingUp } from 'lucide-react';
+import { FileText, Layers, Coins, TrendingUp, Sparkles } from 'lucide-react';
 import { SummaryStats } from '../types/dlr';
 import { formatCurrencyPHP, formatNumber } from '../utils/currency';
 
 interface SummaryCardsProps {
   stats: SummaryStats;
   selectedDepartment: string;
+  liveNewCount?: number;
 }
 
-export const SummaryCards: React.FC<SummaryCardsProps> = ({ stats, selectedDepartment }) => {
+export const SummaryCards: React.FC<SummaryCardsProps> = ({
+  stats,
+  selectedDepartment,
+  liveNewCount = 0,
+}) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
       {/* Total Records */}
       <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs transition-all hover:shadow-md">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Total Records
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Total Records
+              </span>
+              {liveNewCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  +{liveNewCount} live
+                </span>
+              )}
+            </div>
             <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               {formatNumber(stats.totalRecords)}
             </div>

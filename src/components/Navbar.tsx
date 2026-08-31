@@ -1,11 +1,18 @@
+import React from 'react';
 import { LogOut, Store, RefreshCw } from 'lucide-react';
 import { UserSession } from '../types/dlr';
+import { NotificationCenter, RealtimeEventItem } from './NotificationCenter';
 
 interface NavbarProps {
   session: UserSession;
   onLogout: () => void;
   onRefresh?: () => void;
   isLoading?: boolean;
+  realtimeNotifications?: RealtimeEventItem[];
+  onClearNotifications?: () => void;
+  onMarkNotificationsAsRead?: () => void;
+  onTestNotification?: () => void;
+  isRealtimeConnected?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -13,6 +20,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onRefresh,
   isLoading = false,
+  realtimeNotifications = [],
+  onClearNotifications = () => {},
+  onMarkNotificationsAsRead = () => {},
+  onTestNotification,
+  isRealtimeConnected = true,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-slate-900 border-b border-slate-800 text-white shadow-md">
@@ -31,6 +43,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="hidden sm:inline-flex px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
                   DLR v2.0
                 </span>
+                {/* Live Realtime Badge Indicator */}
+                <span
+                  className={`hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full border transition-colors ${
+                    isRealtimeConnected
+                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                      : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                  }`}
+                  title={
+                    isRealtimeConnected
+                      ? 'Connected to Supabase Realtime for instant insert notifications'
+                      : 'Connecting to Supabase Realtime...'
+                  }
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isRealtimeConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                    }`}
+                  />
+                  <span>{isRealtimeConnected ? 'LIVE SYNC' : 'SYNCING'}</span>
+                </span>
               </div>
               <span className="text-[11px] text-slate-400 truncate hidden sm:block">
                 Inventory Defect & Discard Management
@@ -38,8 +70,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Right: Store info, User badge, Refresh & Logout buttons */}
+          {/* Right: Notification Center, Store info, User badge, Refresh & Logout buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Real-time Notification Bell & Drawer */}
+            <NotificationCenter
+              notifications={realtimeNotifications}
+              onClearNotifications={onClearNotifications}
+              onMarkAsRead={onMarkNotificationsAsRead}
+              onTestNotification={onTestNotification}
+              isConnected={isRealtimeConnected}
+            />
+
             {/* Refresh button */}
             {onRefresh && (
               <button
@@ -47,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={onRefresh}
                 disabled={isLoading}
                 title="Refresh DLR Records"
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-rose-400' : ''}`} />
               </button>

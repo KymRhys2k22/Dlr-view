@@ -6,12 +6,14 @@ interface DepartmentTabsProps {
   activeTab: DepartmentName;
   onTabChange: (tab: DepartmentName) => void;
   counts: Record<DepartmentName, number>;
+  liveNewDepts?: Set<DepartmentName>;
 }
 
 export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
   activeTab,
   onTabChange,
   counts,
+  liveNewDepts,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -82,19 +84,23 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
           {DEPARTMENT_TABS.map((tab) => {
             const isActive = activeTab === tab;
             const count = counts[tab] ?? 0;
+            const hasNewItems = liveNewDepts?.has(tab);
 
             return (
               <button
                 key={tab}
                 type="button"
                 onClick={() => onTabChange(tab)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 shrink-0 select-none cursor-pointer ${
+                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 shrink-0 select-none cursor-pointer ${
                   isActive
                     ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                 }`}
               >
                 <span>{tab}</span>
+                {hasNewItems && !isActive && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                )}
                 <span
                   className={`px-2 py-0.5 text-[11px] font-bold rounded-full transition-colors ${
                     isActive

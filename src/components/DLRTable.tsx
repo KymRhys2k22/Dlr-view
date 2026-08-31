@@ -2,7 +2,7 @@ import React from 'react';
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
-import { AlertCircle, Layers, Trash2 } from 'lucide-react';
+import { AlertCircle, Layers, Trash2, Sparkles } from 'lucide-react';
 
 interface DLRTableProps {
   records: DLRRecord[];
@@ -13,6 +13,7 @@ interface DLRTableProps {
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
+  newlyAddedIds?: Set<string>;
 }
 
 export const DLRTable: React.FC<DLRTableProps> = ({
@@ -20,6 +21,7 @@ export const DLRTable: React.FC<DLRTableProps> = ({
   onOpenModal,
   onToast,
   onDeleteRecord,
+  newlyAddedIds,
 }) => {
   const deptColors: Record<string, string> = {
     Houseware: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -50,19 +52,30 @@ export const DLRTable: React.FC<DLRTableProps> = ({
             {records.map((record) => {
               const totalLoss = record.cost * record.qty;
               const deptBadge = deptColors[record.departmentName] || deptColors.Unknown;
+              const isNew = newlyAddedIds?.has(record.id);
 
               return (
                 <tr
                   key={record.id}
-                  className="hover:bg-slate-50/60 transition-colors group"
+                  className={`transition-colors duration-500 group ${
+                    isNew
+                      ? 'bg-emerald-50/80 ring-2 ring-emerald-500/50'
+                      : 'hover:bg-slate-50/60'
+                  }`}
                 >
                   {/* Item Details: SKU, Desc, UPC */}
                   <td className="py-4 px-4 align-top max-w-xs">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           {record.sku || 'N/A'}
                         </span>
+                        {isNew && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold animate-pulse shadow-xs">
+                            <Sparkles className="w-3 h-3" />
+                            NEW
+                          </span>
+                        )}
                         {record.upc && (
                           <span className="font-mono text-[11px] text-slate-400">
                             UPC: {record.upc}

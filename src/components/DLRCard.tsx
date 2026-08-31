@@ -1,4 +1,5 @@
-import { Tag, Barcode, AlertCircle, Coins, Layers, Trash2 } from 'lucide-react';
+import React from 'react';
+import { Tag, Barcode, AlertCircle, Coins, Layers, Trash2, Sparkles } from 'lucide-react';
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
@@ -12,6 +13,7 @@ interface DLRCardProps {
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
+  newlyAddedIds?: Set<string>;
 }
 
 export const DLRCard: React.FC<DLRCardProps> = ({
@@ -19,8 +21,10 @@ export const DLRCard: React.FC<DLRCardProps> = ({
   onOpenModal,
   onToast,
   onDeleteRecord,
+  newlyAddedIds,
 }) => {
   const totalItemCost = record.cost * record.qty;
+  const isNew = newlyAddedIds?.has(record.id);
 
   // Department badge styles
   const deptColors: Record<string, string> = {
@@ -35,7 +39,13 @@ export const DLRCard: React.FC<DLRCardProps> = ({
   const deptBadgeStyle = deptColors[record.departmentName] || deptColors.Unknown;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 space-y-4 relative group">
+    <div
+      className={`bg-white rounded-2xl border ${
+        isNew
+          ? 'border-emerald-500 ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-500/10'
+          : 'border-slate-200/80 shadow-xs hover:shadow-md'
+      } p-4 sm:p-5 transition-all duration-300 space-y-4 relative group`}
+    >
       {/* Top Header: SKU, Department, Qty Badge, Delete button */}
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 min-w-0">
@@ -43,6 +53,12 @@ export const DLRCard: React.FC<DLRCardProps> = ({
             <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
               SKU: {record.sku || 'N/A'}
             </span>
+            {isNew && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md animate-pulse">
+                <Sparkles className="w-3 h-3" />
+                NEW
+              </span>
+            )}
             <span
               className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${deptBadgeStyle}`}
             >
