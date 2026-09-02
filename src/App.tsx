@@ -5,6 +5,8 @@ import {
   fetchDLRRecordsFromSupabase,
   deleteDLRRecordFromSupabase,
   subscribeToDLRChanges,
+  updateDLRNumberInSupabase,
+  unfileDLRRecordInSupabase,
 } from './services/dlrService';
 import { LoginForm } from './components/LoginForm';
 import { Navbar } from './components/Navbar';
@@ -23,9 +25,12 @@ import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { RealtimeEventItem } from './components/NotificationCenter';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { BatchActionBar } from './components/BatchActionBar';
+import { AssignDLRModal } from './components/AssignDLRModal';
+import { FiledDLRView } from './components/FiledDLRView';
 import { playNotificationSound } from './utils/audio';
 import { sendBrowserNotification, updateAppBadge } from './utils/webNotification';
-import { LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { LayoutGrid, Table as TableIcon, ClipboardList, Archive } from 'lucide-react';
 
 const SESSION_STORAGE_KEY = 'daiso_dlr_session_v1';
 
@@ -41,6 +46,9 @@ export const App: React.FC = () => {
       return null;
     }
   });
+
+  // Top View Navigation: 'active' (Unfiled) vs 'filed' (Archived with DLR number)
+  const [pageView, setPageView] = useState<'active' | 'filed'>('active');
 
   // Data fetching state
   const [records, setRecords] = useState<DLRRecord[]>([]);
@@ -58,9 +66,13 @@ export const App: React.FC = () => {
   const [recordToDelete, setRecordToDelete] = useState<DLRRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  // Filters state
+  // Filters state: Single-select department chip
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentName>('All Departments');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Batch Selection & Assign DLR Modal state
+  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<string>>(new Set());
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
 
   // UI preferences
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
@@ -244,6 +256,7 @@ export const App: React.FC = () => {
       departmentCode: '10',
       departmentName: 'Houseware',
       subDep: 'Storage & Organization',
+      dlrNumber: null,
       createdAt: new Date().toISOString(),
     };
 
@@ -329,6 +342,7 @@ export const App: React.FC = () => {
     }
     setSession(userSession);
     setSelectedDepartment('All Departments');
+    setSelectedRecordIds(new Set());
     setSearchQuery('');
     addToast(`Welcome back, ${userSession.name}!`, 'info');
   };
@@ -346,6 +360,7 @@ export const App: React.FC = () => {
     setIsInitialLoaded(false);
     setRealtimeNotifications([]);
     setSelectedDepartment('All Departments');
+    setSelectedRecordIds(new Set());
     setSearchQuery('');
     addToast('Logged out successfully.', 'info');
   };
@@ -357,6 +372,11 @@ export const App: React.FC = () => {
     try {
       await deleteDLRRecordFromSupabase(recordToDelete.id);
       setRecords((prev) => prev.filter((r) => r.id !== recordToDelete.id));
+      setSelectedRecordIds((prev) => {
+        const next = new Set(prev);
+        next.delete(recordToDelete.id);
+        return next;
+      });
       addToast(
         `Record for SKU ${recordToDelete.sku || 'item'} deleted successfully!`,
         'success'
@@ -370,10 +390,24 @@ export const App: React.FC = () => {
     }
   };
 
-  // Department item counts
+  // Separate Active (Unfiled) and Filed Records
+  const activeRecords = useMemo(() => {
+    return records.filter((r) => !r.dlrNumber);
+  }, [records]);
+
+  const filedRecords = useMemo(() => {
+    return records.filter((r) => Boolean(r.dlrNumber));
+  }, [records]);
+
+  // Check if department filtering is active (a specific department chip is chosen)
+  const isDepartmentFilterActive = useMemo(() => {
+    return selectedDepartment !== 'All Departments';
+  }, [selectedDepartment]);
+
+  // Department item counts for ACTIVE records
   const departmentCounts = useMemo<Record<DepartmentName, number>>(() => {
     const counts: Record<DepartmentName, number> = {
-      'All Departments': records.length,
+      'All Departments': activeRecords.length,
       Houseware: 0,
       Fashion: 0,
       'Food & DIY': 0,
@@ -382,7 +416,7 @@ export const App: React.FC = () => {
       Unknown: 0,
     };
 
-    records.forEach((record) => {
+    activeRecords.forEach((record) => {
       const dept = record.departmentName as DepartmentName;
       if (counts[dept] !== undefined && dept !== 'All Departments') {
         counts[dept] += 1;
@@ -392,15 +426,15 @@ export const App: React.FC = () => {
     });
 
     return counts;
-  }, [records]);
+  }, [activeRecords]);
 
-  // Combined Filtered Records (Department + Search)
-  const filteredRecords = useMemo<DLRRecord[]>(() => {
+  // Filtered Active Records (Single Department Filter + Search)
+  const filteredActiveRecords = useMemo<DLRRecord[]>(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return records.filter((record) => {
-      // 1. Department Filter
-      if (selectedDepartment !== 'All Departments') {
+    return activeRecords.filter((record) => {
+      // 1. Department Filter: if active, must match selected department
+      if (isDepartmentFilterActive) {
         if (record.departmentName !== selectedDepartment) {
           return false;
         }
@@ -429,14 +463,14 @@ export const App: React.FC = () => {
 
       return true;
     });
-  }, [records, selectedDepartment, searchQuery]);
+  }, [activeRecords, isDepartmentFilterActive, selectedDepartment, searchQuery]);
 
-  // Recalculated Summary Stats
+  // Recalculated Summary Stats for Active Records
   const summaryStats = useMemo<SummaryStats>(() => {
     let totalQty = 0;
     let totalCost = 0;
 
-    filteredRecords.forEach((record) => {
+    filteredActiveRecords.forEach((record) => {
       const qty = record.qty || 0;
       const cost = record.cost || 0;
       totalQty += qty;
@@ -444,15 +478,81 @@ export const App: React.FC = () => {
     });
 
     return {
-      totalRecords: filteredRecords.length,
+      totalRecords: filteredActiveRecords.length,
       totalQuantity: totalQty,
       totalCost: totalCost,
     };
-  }, [filteredRecords]);
+  }, [filteredActiveRecords]);
+
+  // Single Department selection handler
+  const handleDepartmentChange = (tab: DepartmentName) => {
+    setSelectedDepartment(tab);
+    // Clear selection when changing departments to avoid accidental assignment
+    setSelectedRecordIds(new Set());
+  };
+
+  // Selection handlers
+  const handleToggleSelectRecord = (recordId: string) => {
+    setSelectedRecordIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(recordId)) {
+        next.delete(recordId);
+      } else {
+        next.add(recordId);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllFiltered = () => {
+    const allFilteredIds = filteredActiveRecords.map((r) => r.id);
+    const areAllSelected =
+      allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedRecordIds.has(id));
+
+    if (areAllSelected) {
+      setSelectedRecordIds(new Set());
+    } else {
+      setSelectedRecordIds(new Set(allFilteredIds));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRecordIds(new Set());
+  };
+
+  // Assign DLR Number submission
+  const handleAssignDLRNumber = async (dlrNumber: string) => {
+    const targetIds = Array.from(selectedRecordIds);
+    if (!targetIds.length) return;
+
+    await updateDLRNumberInSupabase(targetIds, dlrNumber);
+
+    // Optimistically update records
+    setRecords((prev) =>
+      prev.map((r) => (targetIds.includes(r.id) ? { ...r, dlrNumber: dlrNumber.trim() } : r))
+    );
+
+    setSelectedRecordIds(new Set());
+    addToast(`Successfully filed ${targetIds.length} item(s) under DLR #${dlrNumber}!`, 'success');
+  };
+
+  // Unfile a record (move back to Active Audit)
+  const handleUnfileRecord = async (recordId: string) => {
+    await unfileDLRRecordInSupabase([recordId]);
+    setRecords((prev) =>
+      prev.map((r) => (r.id === recordId ? { ...r, dlrNumber: null } : r))
+    );
+  };
+
+  // Selected records list for Assign Modal preview
+  const selectedRecordsList = useMemo(() => {
+    return filteredActiveRecords.filter((r) => selectedRecordIds.has(r.id));
+  }, [filteredActiveRecords, selectedRecordIds]);
 
   // Reset filters helper
   const handleResetFilters = () => {
     setSelectedDepartment('All Departments');
+    setSelectedRecordIds(new Set());
     setSearchQuery('');
   };
 
@@ -500,6 +600,55 @@ export const App: React.FC = () => {
         {/* Personalized Greeting */}
         <Greeting session={session} />
 
+        {/* View Switcher: Active Audit vs Filed DLRs */}
+        <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-xs mb-6 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setPageView('active');
+              setSelectedRecordIds(new Set());
+            }}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              pageView === 'active'
+                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span>Active Audit</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                pageView === 'active' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}
+            >
+              {activeRecords.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPageView('filed');
+              setSelectedRecordIds(new Set());
+            }}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              pageView === 'filed'
+                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Archive className="w-4 h-4" />
+            <span>Filed DLRs</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                pageView === 'filed' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}
+            >
+              {filedRecords.length}
+            </span>
+          </button>
+        </div>
+
         {/* Loading State */}
         {isLoading && <SkeletonLoader />}
 
@@ -514,119 +663,162 @@ export const App: React.FC = () => {
 
         {/* Data Content */}
         {!isLoading && !errorMessage && (
-          <div className="space-y-6">
-            {/* Dynamic Summary Cards with Live Badge */}
-            <SummaryCards
-              stats={summaryStats}
-              selectedDepartment={selectedDepartment}
-              liveNewCount={realtimeNotifications.length}
-            />
+          <>
+            {pageView === 'active' ? (
+              <div className="space-y-6">
+                {/* Dynamic Summary Cards with Live Badge */}
+                <SummaryCards
+                  stats={summaryStats}
+                  selectedDepartment={selectedDepartment}
+                  liveNewCount={realtimeNotifications.length}
+                />
 
-            {/* Department Filter Tabs with Badge Indicators */}
-            <div className="space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Filter by Department
-              </div>
-              <DepartmentTabs
-                activeTab={selectedDepartment}
-                onTabChange={setSelectedDepartment}
-                counts={departmentCounts}
-                liveNewDepts={liveNewDepts}
-              />
-            </div>
-
-            {/* Controls Bar: Search, View Mode Toggle, Excel Export */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
-              {/* Search Bar */}
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                totalMatches={filteredRecords.length}
-              />
-
-              <div className="flex items-center gap-2 shrink-0">
-                {/* View Mode Toggle (Desktop only) */}
-                <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('table')}
-                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                      viewMode === 'table'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                    title="Table View"
-                  >
-                    <TableIcon className="w-4 h-4" />
-                    <span>Table</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('cards')}
-                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                      viewMode === 'cards'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                    title="Card Grid View"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                    <span>Cards</span>
-                  </button>
+                {/* Department Filter Tabs with Badge Indicators */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Filter by Department
+                    </div>
+                    {isDepartmentFilterActive && (
+                      <span className="text-xs font-semibold text-rose-600">
+                        {selectedDepartment} active · Checkboxes enabled
+                      </span>
+                    )}
+                  </div>
+                  <DepartmentTabs
+                    activeTab={selectedDepartment}
+                    onTabChange={handleDepartmentChange}
+                    counts={departmentCounts}
+                    liveNewDepts={liveNewDepts}
+                  />
                 </div>
 
-                {/* Export Excel Button */}
-                <ExportExcelButton
-                  records={filteredRecords}
-                  selectedDepartment={selectedDepartment}
-                  storeCode={session.storeCode}
-                  onToast={addToast}
-                />
-              </div>
-            </div>
+                {/* Conditional Batch Action Bar (ONLY visible when filtered by specific department) */}
+                {isDepartmentFilterActive && (
+                  <BatchActionBar
+                    isVisible={isDepartmentFilterActive}
+                    totalFilteredCount={filteredActiveRecords.length}
+                    selectedCount={selectedRecordIds.size}
+                    isAllSelected={
+                      filteredActiveRecords.length > 0 &&
+                      filteredActiveRecords.every((r) => selectedRecordIds.has(r.id))
+                    }
+                    onToggleSelectAll={handleToggleSelectAllFiltered}
+                    onClearSelection={handleClearSelection}
+                    onOpenAssignModal={() => setIsAssignModalOpen(true)}
+                  />
+                )}
 
-            {/* Records List / Table or Empty State */}
-            {filteredRecords.length === 0 ? (
-              <EmptyState
-                isSearchActive={Boolean(searchQuery.trim())}
-                selectedDepartment={selectedDepartment}
-                onReset={handleResetFilters}
-              />
-            ) : (
-              <>
-                {/* Desktop Table View */}
-                {viewMode === 'table' ? (
-                  <div className="hidden lg:block">
-                    <DLRTable
-                      records={filteredRecords}
-                      onOpenModal={handleOpenImageModal}
+                {/* Controls Bar: Search, View Mode Toggle, Excel Export */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
+                  {/* Search Bar */}
+                  <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    totalMatches={filteredActiveRecords.length}
+                  />
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* View Mode Toggle (Desktop only) */}
+                    <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('table')}
+                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                          viewMode === 'table'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                        title="Table View"
+                      >
+                        <TableIcon className="w-4 h-4" />
+                        <span>Table</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('cards')}
+                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                          viewMode === 'cards'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                        title="Card Grid View"
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                        <span>Cards</span>
+                      </button>
+                    </div>
+
+                    {/* Export Excel Button */}
+                    <ExportExcelButton
+                      records={filteredActiveRecords}
+                      selectedDepartment={selectedDepartment}
+                      storeCode={session.storeCode}
                       onToast={addToast}
-                      onDeleteRecord={(rec) => setRecordToDelete(rec)}
-                      newlyAddedIds={newlyAddedIds}
                     />
                   </div>
-                ) : null}
-
-                {/* Card View (Always on Mobile/Tablet, or when selected on Desktop) */}
-                <div
-                  className={`${
-                    viewMode === 'table' ? 'lg:hidden' : 'block'
-                  } grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`}
-                >
-                  {filteredRecords.map((record) => (
-                    <DLRCard
-                      key={record.id}
-                      record={record}
-                      onOpenModal={handleOpenImageModal}
-                      onToast={addToast}
-                      onDeleteRecord={(rec) => setRecordToDelete(rec)}
-                      newlyAddedIds={newlyAddedIds}
-                    />
-                  ))}
                 </div>
-              </>
+
+                {/* Records List / Table or Empty State */}
+                {filteredActiveRecords.length === 0 ? (
+                  <EmptyState
+                    isSearchActive={Boolean(searchQuery.trim())}
+                    selectedDepartment={selectedDepartment}
+                    onReset={handleResetFilters}
+                  />
+                ) : (
+                  <>
+                    {/* Desktop Table View */}
+                    {viewMode === 'table' ? (
+                      <div className="hidden lg:block">
+                        <DLRTable
+                          records={filteredActiveRecords}
+                          onOpenModal={handleOpenImageModal}
+                          onToast={addToast}
+                          onDeleteRecord={(rec) => setRecordToDelete(rec)}
+                          newlyAddedIds={newlyAddedIds}
+                          isSelectable={isDepartmentFilterActive}
+                          selectedRecordIds={selectedRecordIds}
+                          onToggleSelectRecord={handleToggleSelectRecord}
+                          onToggleSelectAll={handleToggleSelectAllFiltered}
+                        />
+                      </div>
+                    ) : null}
+
+                    {/* Card View (Always on Mobile/Tablet, or when selected on Desktop) */}
+                    <div
+                      className={`${
+                        viewMode === 'table' ? 'lg:hidden' : 'block'
+                      } grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`}
+                    >
+                      {filteredActiveRecords.map((record) => (
+                        <DLRCard
+                          key={record.id}
+                          record={record}
+                          onOpenModal={handleOpenImageModal}
+                          onToast={addToast}
+                          onDeleteRecord={(rec) => setRecordToDelete(rec)}
+                          newlyAddedIds={newlyAddedIds}
+                          isSelectable={isDepartmentFilterActive}
+                          isSelected={selectedRecordIds.has(record.id)}
+                          onToggleSelect={handleToggleSelectRecord}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              /* Filed DLRs Page / Archive View */
+              <FiledDLRView
+                records={filedRecords}
+                storeCode={session.storeCode}
+                onOpenImageModal={handleOpenImageModal}
+                onToast={addToast}
+                onUnfileRecord={handleUnfileRecord}
+              />
             )}
-          </div>
+          </>
         )}
       </main>
 
@@ -659,6 +851,14 @@ export const App: React.FC = () => {
         onClose={() => !isDeleting && setRecordToDelete(null)}
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
+      />
+
+      {/* Assign DLR Number Modal */}
+      <AssignDLRModal
+        isOpen={isAssignModalOpen}
+        selectedRecords={selectedRecordsList}
+        onClose={() => setIsAssignModalOpen(false)}
+        onAssign={handleAssignDLRNumber}
       />
 
       {/* PWA Install and Offline Prompt */}

@@ -136,3 +136,5 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
     </div>
   );
 };
+
+

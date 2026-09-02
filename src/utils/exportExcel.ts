@@ -18,6 +18,7 @@ export function exportDLRToExcel(
     const departmentName = getDepartmentName(record.departmentCode);
 
     return {
+      'DLR Number': record.dlrNumber || 'Unfiled',
       SKU: record.sku,
       Description: record.description,
       UPC: record.upc,
@@ -41,6 +42,7 @@ export function exportDLRToExcel(
 
   // Set column widths for readability
   worksheet['!cols'] = [
+    { wch: 16 }, // DLR Number
     { wch: 12 }, // SKU
     { wch: 35 }, // Description
     { wch: 16 }, // UPC

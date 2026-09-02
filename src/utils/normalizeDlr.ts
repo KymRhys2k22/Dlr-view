@@ -54,6 +54,18 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord, index = 0): DLRRec
   const rawStoreCode = raw['Store Code'] ?? raw.StoreCode ?? raw.store_code ?? raw.storeCode ?? '';
   const storeCode = String(rawStoreCode).trim();
 
+  // Extract dlr-number
+  const rawDlrNumber =
+    raw['dlr-number'] ??
+    raw.dlr_number ??
+    raw.dlrNumber ??
+    raw['DLR Number'] ??
+    raw.DLRNumber ??
+    null;
+  const dlrNumber = rawDlrNumber && String(rawDlrNumber).trim() !== '' && String(rawDlrNumber).trim() !== 'null'
+    ? String(rawDlrNumber).trim()
+    : null;
+
   return {
     id: raw.id ?? `dlr_${raw.idx ?? index}_${Date.now()}`,
     sku: String(raw.SKU ?? raw.sku ?? '').trim(),
@@ -71,6 +83,7 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord, index = 0): DLRRec
     departmentCode: rawDept,
     departmentName,
     subDep,
+    dlrNumber,
     createdAt: raw.created_at,
   };
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
+import { CopySKUButton } from './CopySKUButton';
 import { AlertCircle, Layers, Trash2, Sparkles } from 'lucide-react';
 
 interface DLRTableProps {
@@ -14,6 +15,10 @@ interface DLRTableProps {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
   newlyAddedIds?: Set<string>;
+  isSelectable?: boolean;
+  selectedRecordIds?: Set<string>;
+  onToggleSelectRecord?: (recordId: string) => void;
+  onToggleSelectAll?: () => void;
 }
 
 export const DLRTable: React.FC<DLRTableProps> = ({
@@ -22,6 +27,10 @@ export const DLRTable: React.FC<DLRTableProps> = ({
   onToast,
   onDeleteRecord,
   newlyAddedIds,
+  isSelectable = false,
+  selectedRecordIds = new Set(),
+  onToggleSelectRecord,
+  onToggleSelectAll,
 }) => {
   const deptColors: Record<string, string> = {
     Houseware: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -32,12 +41,26 @@ export const DLRTable: React.FC<DLRTableProps> = ({
     Unknown: 'bg-slate-100 text-slate-700 border-slate-300',
   };
 
+  const isAllSelected =
+    records.length > 0 && records.every((r) => selectedRecordIds.has(r.id));
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              {isSelectable && (
+                <th className="py-3.5 px-3 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={onToggleSelectAll}
+                    aria-label="Select all rows"
+                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer"
+                  />
+                </th>
+              )}
               <th className="py-3.5 px-4">Item Details</th>
               <th className="py-3.5 px-3">Department / SubDep</th>
               <th className="py-3.5 px-3">Defect Reason</th>
@@ -53,23 +76,36 @@ export const DLRTable: React.FC<DLRTableProps> = ({
               const totalLoss = record.cost * record.qty;
               const deptBadge = deptColors[record.departmentName] || deptColors.Unknown;
               const isNew = newlyAddedIds?.has(record.id);
+              const isSelected = selectedRecordIds.has(record.id);
 
               return (
                 <tr
                   key={record.id}
-                  className={`transition-colors duration-500 group ${
-                    isNew
+                  className={`transition-colors duration-200 group ${
+                    isSelected
+                      ? 'bg-rose-50/60 ring-1 ring-rose-300'
+                      : isNew
                       ? 'bg-emerald-50/80 ring-2 ring-emerald-500/50'
                       : 'hover:bg-slate-50/60'
                   }`}
                 >
+                  {/* Select Checkbox */}
+                  {isSelectable && (
+                    <td className="py-4 px-3 text-center align-top">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggleSelectRecord?.(record.id)}
+                        aria-label={`Select ${record.sku}`}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer mt-1"
+                      />
+                    </td>
+                  )}
                   {/* Item Details: SKU, Desc, UPC */}
                   <td className="py-4 px-4 align-top max-w-xs">
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                          {record.sku || 'N/A'}
-                        </span>
+                        <CopySKUButton sku={record.sku} onToast={onToast} />
                         {isNew && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold animate-pulse shadow-xs">
                             <Sparkles className="w-3 h-3" />

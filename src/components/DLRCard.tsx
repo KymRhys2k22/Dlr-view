@@ -3,6 +3,7 @@ import { Tag, Barcode, AlertCircle, Coins, Layers, Trash2, Sparkles } from 'luci
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
+import { CopySKUButton } from './CopySKUButton';
 
 interface DLRCardProps {
   record: DLRRecord;
@@ -14,6 +15,9 @@ interface DLRCardProps {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
   newlyAddedIds?: Set<string>;
+  isSelectable?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (recordId: string) => void;
 }
 
 export const DLRCard: React.FC<DLRCardProps> = ({
@@ -22,6 +26,9 @@ export const DLRCard: React.FC<DLRCardProps> = ({
   onToast,
   onDeleteRecord,
   newlyAddedIds,
+  isSelectable = false,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   const totalItemCost = record.cost * record.qty;
   const isNew = newlyAddedIds?.has(record.id);
@@ -41,24 +48,34 @@ export const DLRCard: React.FC<DLRCardProps> = ({
   return (
     <div
       className={`bg-white rounded-2xl border ${
-        isNew
+        isSelected
+          ? 'border-rose-400 ring-2 ring-rose-400/40 shadow-md bg-rose-50/20'
+          : isNew
           ? 'border-emerald-500 ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-500/10'
           : 'border-slate-200/80 shadow-xs hover:shadow-md'
       } p-4 sm:p-5 transition-all duration-300 space-y-4 relative group`}
     >
-      {/* Top Header: SKU, Department, Qty Badge, Delete button */}
+      {/* Top Header: Selection Checkbox, SKU, Department, Qty Badge, Delete button */}
       <div className="flex items-start justify-between gap-2">
-        <div className="space-y-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-              SKU: {record.sku || 'N/A'}
-            </span>
-            {isNew && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md animate-pulse">
-                <Sparkles className="w-3 h-3" />
-                NEW
-              </span>
-            )}
+        <div className="flex items-start gap-2.5 min-w-0">
+          {isSelectable && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect?.(record.id)}
+              aria-label={`Select ${record.sku}`}
+              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer mt-1 shrink-0"
+            />
+          )}
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <CopySKUButton sku={record.sku} prefix="SKU: " onToast={onToast} />
+              {isNew && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md animate-pulse">
+                  <Sparkles className="w-3 h-3" />
+                  NEW
+                </span>
+              )}
             <span
               className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${deptBadgeStyle}`}
             >
@@ -75,6 +92,7 @@ export const DLRCard: React.FC<DLRCardProps> = ({
             {record.description || 'No Description Provided'}
           </h4>
         </div>
+      </div>
 
         {/* Qty Badge and Delete action */}
         <div className="flex items-center gap-1.5 shrink-0">

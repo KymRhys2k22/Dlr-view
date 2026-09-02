@@ -265,3 +265,44 @@ export function subscribeToDLRChanges({
     supabase.removeChannel(channel);
   };
 }
+
+/**
+ * Update the 'dlr-number' column for one or more DLR records in Supabase
+ */
+export async function updateDLRNumberInSupabase(
+  recordIds: string[],
+  dlrNumber: string
+): Promise<void> {
+  if (!recordIds.length) return;
+  const cleanDlr = dlrNumber.trim();
+
+  const { error } = await supabase
+    .from('dlr_records')
+    .update({ 'dlr-number': cleanDlr })
+    .in('id', recordIds);
+
+  if (error) {
+    console.error('Supabase update dlr-number error:', error.message);
+    throw new Error(error.message || 'Failed to update DLR number in database');
+  }
+}
+
+/**
+ * Remove or clear the 'dlr-number' column for one or more DLR records (unfile)
+ */
+export async function unfileDLRRecordInSupabase(
+  recordIds: string[]
+): Promise<void> {
+  if (!recordIds.length) return;
+
+  const { error } = await supabase
+    .from('dlr_records')
+    .update({ 'dlr-number': null })
+    .in('id', recordIds);
+
+  if (error) {
+    console.error('Supabase unfile error:', error.message);
+    throw new Error(error.message || 'Failed to unfile DLR record in database');
+  }
+}
+
