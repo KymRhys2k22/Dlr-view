@@ -276,10 +276,18 @@ export async function updateDLRNumberInSupabase(
   if (!recordIds.length) return;
   const cleanDlr = dlrNumber.trim();
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from('dlr_records')
     .update({ 'dlr-number': cleanDlr })
     .in('id', recordIds);
+
+  if (error && (error.code === 'PGRST205' || error.message.includes('not find the table') || error.code === '42P01')) {
+    const fallback = await supabase
+      .from('dlr_unsigned')
+      .update({ 'dlr-number': cleanDlr })
+      .in('id', recordIds);
+    error = fallback.error;
+  }
 
   if (error) {
     console.error('Supabase update dlr-number error:', error.message);
@@ -295,10 +303,18 @@ export async function unfileDLRRecordInSupabase(
 ): Promise<void> {
   if (!recordIds.length) return;
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from('dlr_records')
     .update({ 'dlr-number': null })
     .in('id', recordIds);
+
+  if (error && (error.code === 'PGRST205' || error.message.includes('not find the table') || error.code === '42P01')) {
+    const fallback = await supabase
+      .from('dlr_unsigned')
+      .update({ 'dlr-number': null })
+      .in('id', recordIds);
+    error = fallback.error;
+  }
 
   if (error) {
     console.error('Supabase unfile error:', error.message);

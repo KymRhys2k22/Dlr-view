@@ -3,6 +3,7 @@ import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
 import { CopySKUButton } from './CopySKUButton';
+import { CopyUPCButton } from './CopyUPCButton';
 import { AlertCircle, Layers, Trash2, Sparkles } from 'lucide-react';
 
 interface DLRTableProps {
@@ -10,7 +11,7 @@ interface DLRTableProps {
   onOpenModal: (
     url: string,
     type: string,
-    item?: { sku: string; description: string; reason: string }
+    item?: { sku: string; description: string; reason: string; upc?: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
@@ -113,9 +114,7 @@ export const DLRTable: React.FC<DLRTableProps> = ({
                           </span>
                         )}
                         {record.upc && (
-                          <span className="font-mono text-[11px] text-slate-400">
-                            UPC: {record.upc}
-                          </span>
+                          <CopyUPCButton upc={record.upc} onToast={onToast} />
                         )}
                       </div>
                       <div className="font-semibold text-slate-800 leading-snug line-clamp-2">

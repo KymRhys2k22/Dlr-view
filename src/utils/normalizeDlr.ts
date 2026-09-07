@@ -1,5 +1,6 @@
 import { RawSupabaseDLRRecord, DLRRecord } from '../types/dlr';
 import { getDepartmentName } from './getDepartmentName';
+import { optimizeImageUrl } from './imageUrl';
 
 export function normalizeDlrRecord(raw: RawSupabaseDLRRecord, index = 0): DLRRecord {
   // Extract department code/string safely from Supabase
@@ -24,9 +25,23 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord, index = 0): DLRRec
     null;
   const subDep = rawSubDep && rawSubDep !== 'null' ? String(rawSubDep).trim() : null;
 
-  // Extract images array (Quantity, Damage, Barcode)
-  const rawImages = raw.image ?? raw.Image ?? raw.images ?? [];
-  const images = Array.isArray(rawImages) ? rawImages.filter(Boolean) : [];
+  // Extract images array (Quantity, Damage, Barcode) and add /w_700/ to reduce KB size
+  const rawImages: unknown = raw.image ?? raw.Image ?? raw.images ?? [];
+  let imageList: unknown[] = [];
+  if (Array.isArray(rawImages)) {
+    imageList = rawImages;
+  } else if (typeof rawImages === 'string' && rawImages.trim()) {
+    try {
+      const parsed = JSON.parse(rawImages);
+      if (Array.isArray(parsed)) imageList = parsed;
+      else imageList = [rawImages];
+    } catch {
+      imageList = rawImages.split(',').map((s: string) => s.trim());
+    }
+  }
+  const images = imageList
+    .filter(Boolean)
+    .map((img) => optimizeImageUrl(String(img).trim()));
 
   // Parse numeric cost safely
   const rawCostStr = String(raw.Cost ?? raw.cost ?? '0').trim();

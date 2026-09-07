@@ -1,14 +1,15 @@
 import React from 'react';
-import { FileText, ChevronRight, Package, Calendar } from 'lucide-react';
+import { FileText, ChevronRight, Package, Calendar, Pencil } from 'lucide-react';
 import { FiledDLRGroup } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 
 interface FiledDLRCardProps {
   group: FiledDLRGroup;
   onClick: (group: FiledDLRGroup) => void;
+  onEditDlr?: (group: FiledDLRGroup) => void;
 }
 
-export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({ group, onClick }) => {
+export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({ group, onClick, onEditDlr }) => {
   return (
     <div
       onClick={() => onClick(group)}
@@ -24,6 +25,19 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({ group, onClick }) =>
             <span className="font-mono text-sm sm:text-base font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200/80 shadow-2xs">
               #{group.dlrNumber}
             </span>
+            {onEditDlr && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditDlr(group);
+                }}
+                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                title="Edit DLR Number"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
               Filed
             </span>

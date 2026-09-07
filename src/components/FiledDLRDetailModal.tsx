@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { X, FileSpreadsheet, Layers, RotateCcw, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, FileSpreadsheet, Layers, RotateCcw, Loader2, Pencil, Check } from 'lucide-react';
 import { FiledDLRGroup } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
 import { CopySKUButton } from './CopySKUButton';
+import { CopyUPCButton } from './CopyUPCButton';
 import { exportDLRToExcel } from '../utils/exportExcel';
 
 interface FiledDLRDetailModalProps {
@@ -14,10 +15,11 @@ interface FiledDLRDetailModalProps {
   onOpenImageModal: (
     url: string,
     type: string,
-    item?: { sku: string; description: string; reason: string }
+    item?: { sku: string; description: string; reason: string; upc?: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onUnfileRecord?: (recordId: string) => Promise<void>;
+  onUpdateDLRNumber?: (recordIds: string[], newDlrNumber: string) => Promise<void>;
 }
 
 export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
@@ -28,10 +30,83 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
   onOpenImageModal,
   onToast,
   onUnfileRecord,
+  onUpdateDLRNumber,
 }) => {
   const [unfilingId, setUnfilingId] = useState<string | null>(null);
 
+  // Batch DLR edit state
+  const [isEditingBatchDlr, setIsEditingBatchDlr] = useState(false);
+  const [batchDlrInput, setBatchDlrInput] = useState('');
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
+
+  // Per-item DLR edit state
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [recordDlrInput, setRecordDlrInput] = useState('');
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
+
+  useEffect(() => {
+    if (group) {
+      setBatchDlrInput(group.dlrNumber);
+      setIsEditingBatchDlr(false);
+      setEditingRecordId(null);
+    }
+  }, [group?.dlrNumber, isOpen]);
+
   if (!isOpen || !group) return null;
+
+  const handleSaveBatchDlr = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanDlr = batchDlrInput.trim();
+    if (!cleanDlr) {
+      onToast('DLR Number cannot be empty', 'error');
+      return;
+    }
+    if (cleanDlr === group.dlrNumber) {
+      setIsEditingBatchDlr(false);
+      return;
+    }
+    if (!onUpdateDLRNumber) return;
+
+    setIsSavingBatch(true);
+    try {
+      const recordIds = group.records.map((r) => r.id);
+      await onUpdateDLRNumber(recordIds, cleanDlr);
+      setIsEditingBatchDlr(false);
+      onToast(`Updated batch to DLR #${cleanDlr}!`, 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update DLR number';
+      onToast(msg, 'error');
+    } finally {
+      setIsSavingBatch(false);
+    }
+  };
+
+  const handleSaveRecordDlr = async (e: React.FormEvent, recordId: string) => {
+    e.preventDefault();
+    const cleanDlr = recordDlrInput.trim();
+    if (!cleanDlr) {
+      onToast('DLR Number cannot be empty', 'error');
+      return;
+    }
+    const currentRecord = group.records.find((r) => r.id === recordId);
+    if (cleanDlr === (currentRecord?.dlrNumber || group.dlrNumber)) {
+      setEditingRecordId(null);
+      return;
+    }
+    if (!onUpdateDLRNumber) return;
+
+    setIsSavingRecord(true);
+    try {
+      await onUpdateDLRNumber([recordId], cleanDlr);
+      setEditingRecordId(null);
+      onToast(`Updated SKU ${currentRecord?.sku || ''} to DLR #${cleanDlr}!`, 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update DLR number';
+      onToast(msg, 'error');
+    } finally {
+      setIsSavingRecord(false);
+    }
+  };
 
   const handleExportExcel = () => {
     try {
@@ -71,9 +146,66 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/80 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center px-3 py-1.5 rounded-xl bg-rose-600 text-white font-mono font-black text-sm sm:text-base shadow-sm">
-              #{group.dlrNumber}
-            </div>
+            {isEditingBatchDlr ? (
+              <form
+                onSubmit={handleSaveBatchDlr}
+                className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border-2 border-rose-500 shadow-xs"
+              >
+                <span className="text-slate-400 font-mono font-bold text-sm pl-2">#</span>
+                <input
+                  type="text"
+                  value={batchDlrInput}
+                  onChange={(e) => setBatchDlrInput(e.target.value)}
+                  disabled={isSavingBatch}
+                  placeholder="DLR #"
+                  className="w-28 sm:w-36 text-xs sm:text-sm font-mono font-bold text-slate-900 focus:outline-none"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={isSavingBatch || !batchDlrInput.trim()}
+                  className="p-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Save DLR Number"
+                >
+                  {isSavingBatch ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingBatchDlr(false);
+                    setBatchDlrInput(group.dlrNumber);
+                  }}
+                  disabled={isSavingBatch}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="Cancel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center px-3 py-1.5 rounded-xl bg-rose-600 text-white font-mono font-black text-sm sm:text-base shadow-sm">
+                  #{group.dlrNumber}
+                </div>
+                {onUpdateDLRNumber && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBatchDlrInput(group.dlrNumber);
+                      setIsEditingBatchDlr(true);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                    title="Edit batch DLR number"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
             <div>
               <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
                 Filed DLR Report
@@ -110,6 +242,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
             {group.records.map((record) => {
               const itemTotal = record.cost * record.qty;
               const isUnfiling = unfilingId === record.id;
+              const isEditingThisRecord = editingRecordId === record.id;
 
               return (
                 <div key={record.id} className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
@@ -117,6 +250,9 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <CopySKUButton sku={record.sku} onToast={onToast} />
+                      {record.upc && (
+                        <CopyUPCButton upc={record.upc} onToast={onToast} />
+                      )}
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                         {record.departmentName}
                       </span>
@@ -158,6 +294,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                     <DLRImagePreview
                       images={record.images}
                       sku={record.sku}
+                      upc={record.upc}
                       description={record.description}
                       reason={record.reason}
                       onOpenModal={onOpenImageModal}
@@ -165,13 +302,67 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                     />
                   </div>
 
-                  {/* Actions: Unfile */}
-                  {onUnfileRecord && (
-                    <div className="shrink-0">
+                  {/* Actions: Edit DLR & Unfile */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isEditingThisRecord ? (
+                      <form
+                        onSubmit={(e) => handleSaveRecordDlr(e, record.id)}
+                        className="flex items-center gap-1 bg-white p-1 rounded-xl border border-rose-300 shadow-xs"
+                      >
+                        <span className="text-[11px] font-bold text-slate-400 font-mono pl-1.5">#</span>
+                        <input
+                          type="text"
+                          value={recordDlrInput}
+                          onChange={(e) => setRecordDlrInput(e.target.value)}
+                          disabled={isSavingRecord}
+                          className="w-20 sm:w-24 px-1.5 py-1 text-xs font-mono font-bold text-slate-800 focus:outline-none"
+                          placeholder="DLR #"
+                          autoFocus
+                        />
+                        <button
+                          type="submit"
+                          disabled={isSavingRecord || !recordDlrInput.trim()}
+                          className="p-1 text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition-colors cursor-pointer"
+                          title="Save DLR #"
+                        >
+                          {isSavingRecord ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingRecordId(null)}
+                          disabled={isSavingRecord}
+                          className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title="Cancel"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </form>
+                    ) : (
+                      onUpdateDLRNumber && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingRecordId(record.id);
+                            setRecordDlrInput(record.dlrNumber || group.dlrNumber);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+                          title="Edit DLR number for this item"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Edit DLR #</span>
+                        </button>
+                      )
+                    )}
+
+                    {onUnfileRecord && (
                       <button
                         type="button"
                         onClick={() => handleUnfile(record.id, record.sku)}
-                        disabled={isUnfiling}
+                        disabled={isUnfiling || isSavingRecord}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-amber-700 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 transition-colors cursor-pointer disabled:opacity-50"
                         title="Move back to Active Audit"
                       >
@@ -182,8 +373,8 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                         )}
                         <span>Unfile</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}

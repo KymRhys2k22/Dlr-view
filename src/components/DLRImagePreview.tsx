@@ -1,16 +1,18 @@
 import React from 'react';
 import { ImageOff, ZoomIn } from 'lucide-react';
 import { CopyImageButton } from './CopyImageButton';
+import { optimizeImageUrl } from '../utils/imageUrl';
 
 interface DLRImagePreviewProps {
   images: string[];
   sku: string;
+  upc?: string;
   description: string;
   reason: string;
   onOpenModal: (
     url: string,
     type: string,
-    item?: { sku: string; description: string; reason: string }
+    item?: { sku: string; description: string; reason: string; upc?: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   layout?: 'row' | 'grid';
@@ -31,6 +33,7 @@ const SLOTS: ImageSlot[] = [
 export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
   images,
   sku,
+  upc,
   description,
   reason,
   onOpenModal,
@@ -44,7 +47,8 @@ export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
       }`}
     >
       {SLOTS.map(({ index, label, badgeColor }) => {
-        const url = images && images[index] ? images[index] : null;
+        const rawUrl = images && images[index] ? images[index] : null;
+        const url = rawUrl ? optimizeImageUrl(rawUrl) : null;
 
         return (
           <div
@@ -54,7 +58,7 @@ export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
             {/* Thumbnail Box */}
             <div
               onClick={() =>
-                url && onOpenModal(url, label, { sku, description, reason })
+                url && onOpenModal(url, label, { sku, upc, description, reason })
               }
               className={`relative w-full aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white group select-none ${
                 url ? 'cursor-pointer' : 'cursor-default'

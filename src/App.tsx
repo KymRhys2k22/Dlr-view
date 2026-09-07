@@ -81,7 +81,7 @@ export const App: React.FC = () => {
   const [modalImage, setModalImage] = useState<{
     url: string | null;
     type: string;
-    item?: { sku: string; description: string; reason: string };
+    item?: { sku: string; description: string; reason: string; upc?: string };
   }>({
     url: null,
     type: '',
@@ -544,6 +544,21 @@ export const App: React.FC = () => {
     );
   };
 
+  // Update DLR Number for filed items (batch or single)
+  const handleUpdateDLRNumber = async (recordIds: string[], newDlrNumber: string) => {
+    const cleanDlr = newDlrNumber.trim();
+    if (!cleanDlr) throw new Error('DLR Number cannot be empty');
+    if (!recordIds.length) return;
+
+    await updateDLRNumberInSupabase(recordIds, cleanDlr);
+
+    setRecords((prev) =>
+      prev.map((r) =>
+        recordIds.includes(r.id) ? { ...r, dlrNumber: cleanDlr } : r
+      )
+    );
+  };
+
   // Selected records list for Assign Modal preview
   const selectedRecordsList = useMemo(() => {
     return filteredActiveRecords.filter((r) => selectedRecordIds.has(r.id));
@@ -560,7 +575,7 @@ export const App: React.FC = () => {
   const handleOpenImageModal = (
     url: string,
     type: string,
-    item?: { sku: string; description: string; reason: string }
+    item?: { sku: string; description: string; reason: string; upc?: string }
   ) => {
     setModalImage({ url, type, item });
   };
@@ -816,6 +831,7 @@ export const App: React.FC = () => {
                 onOpenImageModal={handleOpenImageModal}
                 onToast={addToast}
                 onUnfileRecord={handleUnfileRecord}
+                onUpdateDLRNumber={handleUpdateDLRNumber}
               />
             )}
           </>

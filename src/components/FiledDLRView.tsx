@@ -4,6 +4,7 @@ import { FiledDLRGroup, DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { FiledDLRCard } from './FiledDLRCard';
 import { FiledDLRDetailModal } from './FiledDLRDetailModal';
+import { EditDLRModal } from './EditDLRModal';
 
 interface FiledDLRViewProps {
   records: DLRRecord[];
@@ -11,10 +12,11 @@ interface FiledDLRViewProps {
   onOpenImageModal: (
     url: string,
     type: string,
-    item?: { sku: string; description: string; reason: string }
+    item?: { sku: string; description: string; reason: string; upc?: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onUnfileRecord?: (recordId: string) => Promise<void>;
+  onUpdateDLRNumber?: (recordIds: string[], newDlrNumber: string) => Promise<void>;
 }
 
 export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
@@ -23,9 +25,11 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
   onOpenImageModal,
   onToast,
   onUnfileRecord,
+  onUpdateDLRNumber,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<FiledDLRGroup | null>(null);
+  const [groupToEdit, setGroupToEdit] = useState<FiledDLRGroup | null>(null);
 
   // Group filed records by dlrNumber
   const groups = useMemo<FiledDLRGroup[]>(() => {
@@ -92,6 +96,42 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     const totalLoss = groups.reduce((acc, g) => acc + g.totalCost, 0);
     return { totalFiles, totalItems, totalQty, totalLoss };
   }, [groups]);
+
+  const handleUpdateDlr = async (recordIds: string[], newDlrNumber: string) => {
+    if (!onUpdateDLRNumber) return;
+    await onUpdateDLRNumber(recordIds, newDlrNumber);
+
+    // Update selectedGroup if modal is open
+    setSelectedGroup((prev) => {
+      if (!prev) return null;
+
+      const allUpdated = prev.records.every((r) => recordIds.includes(r.id));
+      if (allUpdated) {
+        return {
+          ...prev,
+          dlrNumber: newDlrNumber,
+          records: prev.records.map((r) => ({ ...r, dlrNumber: newDlrNumber })),
+        };
+      }
+
+      // If item-level update:
+      const remaining = prev.records
+        .filter((r) => !recordIds.includes(r.id) || newDlrNumber === prev.dlrNumber)
+        .map((r) => (recordIds.includes(r.id) ? { ...r, dlrNumber: newDlrNumber } : r));
+
+      if (remaining.length === 0) return null;
+
+      const totalQty = remaining.reduce((acc, r) => acc + (r.qty || 0), 0);
+      const totalCost = remaining.reduce((acc, r) => acc + (r.cost || 0) * (r.qty || 0), 0);
+      return {
+        ...prev,
+        records: remaining,
+        totalRecords: remaining.length,
+        totalQuantity: totalQty,
+        totalCost,
+      };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -186,6 +226,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
               key={group.dlrNumber}
               group={group}
               onClick={(g) => setSelectedGroup(g)}
+              onEditDlr={(g) => setGroupToEdit(g)}
             />
           ))}
         </div>
@@ -199,6 +240,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
         onClose={() => setSelectedGroup(null)}
         onOpenImageModal={onOpenImageModal}
         onToast={onToast}
+        onUpdateDLRNumber={onUpdateDLRNumber ? handleUpdateDlr : undefined}
         onUnfileRecord={async (recordId) => {
           if (onUnfileRecord) {
             await onUnfileRecord(recordId);
@@ -220,6 +262,20 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
           }
         }}
       />
+
+      {/* Edit DLR Modal from Card */}
+      {groupToEdit && (
+        <EditDLRModal
+          isOpen={Boolean(groupToEdit)}
+          currentDlrNumber={groupToEdit.dlrNumber}
+          targetRecords={groupToEdit.records}
+          onClose={() => setGroupToEdit(null)}
+          onSave={async (recordIds, newDlrNumber) => {
+            await handleUpdateDlr(recordIds, newDlrNumber);
+            onToast(`Updated batch to DLR #${newDlrNumber}!`, 'success');
+          }}
+        />
+      )}
     </div>
   );
 };

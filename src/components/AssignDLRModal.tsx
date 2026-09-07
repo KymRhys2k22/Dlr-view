@@ -3,6 +3,7 @@ import { X, FileText, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { CopySKUButton } from './CopySKUButton';
+import { CopyUPCButton } from './CopyUPCButton';
 
 interface AssignDLRModalProps {
   isOpen: boolean;
@@ -157,8 +158,11 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
               {selectedRecords.map((item) => (
                 <div key={item.id} className="p-2 flex items-center justify-between gap-3 text-xs">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <CopySKUButton sku={item.sku} className="text-[10px] py-0.2 px-1.5" />
+                      {item.upc && (
+                        <CopyUPCButton upc={item.upc} className="text-[10px] py-0.2 px-1.5" showIcon={false} />
+                      )}
                       <span className="truncate font-medium text-slate-700">
                         {item.description || 'No description'}
                       </span>

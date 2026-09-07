@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { X, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { CopyImageButton } from './CopyImageButton';
+import { CopyUPCButton } from './CopyUPCButton';
+import { optimizeImageUrl, getOriginalImageUrl } from '../utils/imageUrl';
 
 interface ImageModalProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface ImageModalProps {
     sku: string;
     description: string;
     reason: string;
+    upc?: string;
   };
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -41,6 +44,9 @@ export const ImageModal: React.FC<ImageModalProps> = ({
 
   if (!isOpen || !imageUrl) return null;
 
+  const displayUrl = optimizeImageUrl(imageUrl);
+  const originalUrl = getOriginalImageUrl(imageUrl);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
@@ -61,26 +67,34 @@ export const ImageModal: React.FC<ImageModalProps> = ({
                 {imageType} Photo
               </h3>
               {itemInfo && (
-                <p className="text-xs text-slate-500 truncate max-w-md">
-                  SKU: <span className="font-mono font-medium text-slate-700">{itemInfo.sku}</span> · {itemInfo.description}
-                </p>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 truncate max-w-md flex-wrap mt-0.5">
+                  <span className="font-mono font-medium text-slate-700">SKU: {itemInfo.sku}</span>
+                  {itemInfo.upc && (
+                    <CopyUPCButton
+                      upc={itemInfo.upc}
+                      onToast={onToast}
+                      className="text-[10px] py-0 px-1.5"
+                    />
+                  )}
+                  <span className="text-slate-400 truncate">· {itemInfo.description}</span>
+                </div>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <CopyImageButton
-              url={imageUrl}
+              url={displayUrl}
               variant="standard"
               onSuccess={(msg) => onToast(msg, 'success')}
               onError={(msg) => onToast(msg, 'error')}
             />
             <a
-              href={imageUrl}
+              href={originalUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-xs transition-colors"
-              title="Open full image in new tab"
+              title="Open full uncompressed image in new tab"
             >
               <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
               <span>Original</span>
@@ -99,7 +113,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
         {/* Image Content */}
         <div className="relative flex-1 flex items-center justify-center p-4 bg-slate-900/5 overflow-auto min-h-[300px]">
           <img
-            src={imageUrl}
+            src={displayUrl}
             alt={`${imageType} preview`}
             className="max-h-[68vh] max-w-full object-contain rounded-lg shadow-sm"
           />
@@ -115,7 +129,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
               </span>
             </div>
             <div className="font-mono text-[11px] text-slate-400 truncate max-w-xs sm:max-w-md">
-              {imageUrl}
+              {displayUrl}
             </div>
           </div>
         )}

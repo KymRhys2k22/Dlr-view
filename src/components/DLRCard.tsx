@@ -4,13 +4,14 @@ import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
 import { CopySKUButton } from './CopySKUButton';
+import { CopyUPCButton } from './CopyUPCButton';
 
 interface DLRCardProps {
   record: DLRRecord;
   onOpenModal: (
     url: string,
     type: string,
-    item?: { sku: string; description: string; reason: string }
+    item?: { sku: string; description: string; reason: string; upc?: string }
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
@@ -30,87 +31,97 @@ export const DLRCard: React.FC<DLRCardProps> = ({
   isSelected = false,
   onToggleSelect,
 }) => {
-  const totalItemCost = record.cost * record.qty;
   const isNew = newlyAddedIds?.has(record.id);
-
-  // Department badge styles
-  const deptColors: Record<string, string> = {
-    Houseware: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    Fashion: 'bg-pink-50 text-pink-700 border-pink-200',
-    'Food & DIY': 'bg-amber-50 text-amber-800 border-amber-200',
-    Cleaning: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-    'Outdoor & GMS': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    Unknown: 'bg-slate-100 text-slate-700 border-slate-300',
-  };
-
-  const deptBadgeStyle = deptColors[record.departmentName] || deptColors.Unknown;
+  const totalItemCost = record.cost * record.qty;
 
   return (
     <div
-      className={`bg-white rounded-2xl border ${
+      onClick={() => {
+        if (isSelectable && onToggleSelect) {
+          onToggleSelect(record.id);
+        }
+      }}
+      className={`relative bg-white rounded-2xl border transition-all duration-200 p-4 sm:p-5 space-y-4 ${
         isSelected
-          ? 'border-rose-400 ring-2 ring-rose-400/40 shadow-md bg-rose-50/20'
-          : isNew
-          ? 'border-emerald-500 ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-500/10'
-          : 'border-slate-200/80 shadow-xs hover:shadow-md'
-      } p-4 sm:p-5 transition-all duration-300 space-y-4 relative group`}
+          ? 'ring-2 ring-rose-500 border-rose-500 bg-rose-50/10 shadow-md'
+          : isSelectable
+          ? 'cursor-pointer hover:border-rose-300 hover:shadow-md'
+          : 'hover:shadow-md border-slate-200/80'
+      }`}
     >
-      {/* Top Header: Selection Checkbox, SKU, Department, Qty Badge, Delete button */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2.5 min-w-0">
-          {isSelectable && (
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onToggleSelect?.(record.id)}
-              aria-label={`Select ${record.sku}`}
-              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer mt-1 shrink-0"
-            />
-          )}
-          <div className="space-y-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <CopySKUButton sku={record.sku} prefix="SKU: " onToast={onToast} />
-              {isNew && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md animate-pulse">
-                  <Sparkles className="w-3 h-3" />
-                  NEW
-                </span>
-              )}
-            <span
-              className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${deptBadgeStyle}`}
-            >
+      {/* Top row: Checkbox, Department, SubDep, SKU, and Actions */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            {isSelectable && onToggleSelect && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onToggleSelect(record.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer mr-1 shrink-0"
+              />
+            )}
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-100">
               {record.departmentName}
             </span>
+
             {record.subDep && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
                 <Layers className="w-3 h-3 text-slate-400" />
                 <span>{record.subDep}</span>
               </span>
             )}
+
+            {isNew && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold animate-pulse shadow-xs">
+                <Sparkles className="w-3 h-3" />
+                NEW
+              </span>
+            )}
+
+            <CopySKUButton sku={record.sku} prefix="SKU: " onToast={onToast} />
           </div>
-          <h4 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2">
-            {record.description || 'No Description Provided'}
-          </h4>
+
+          <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+            {record.description || 'No Description'}
+          </h3>
+
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 flex-wrap">
+            <span className="font-semibold text-slate-700">Reason:</span>
+            <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+              <AlertCircle className="w-3 h-3 text-amber-500" />
+              {record.reason}
+            </span>
+            {record.secondReason && (
+              <span className="text-slate-400 text-[11px] truncate max-w-[200px]">
+                ({record.secondReason})
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-        {/* Qty Badge and Delete action */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Damaged Qty
+        {/* Top-right: Quantity & Actions */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="flex flex-col items-center justify-center px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span className="text-[10px] uppercase font-bold text-slate-400 leading-none">
+              Qty
             </span>
-            <span className="font-bold text-sm sm:text-base text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-lg">
-              {record.qty} {record.qty === 1 ? 'pc' : 'pcs'}
+            <span className="text-base font-black text-slate-800 leading-tight">
+              {record.qty}
             </span>
           </div>
 
+          {/* Delete Action button */}
           {onDeleteRecord && (
             <button
               type="button"
-              onClick={() => onDeleteRecord(record)}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors ml-1 border border-transparent hover:border-rose-200"
-              title={`Delete record for SKU ${record.sku}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteRecord(record);
+              }}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              title="Delete record"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -121,12 +132,16 @@ export const DLRCard: React.FC<DLRCardProps> = ({
       {/* Meta details bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 text-xs">
         <div>
-          <span className="text-[10px] uppercase font-semibold text-slate-400 flex items-center gap-1">
+          <span className="text-[10px] uppercase font-semibold text-slate-400 flex items-center gap-1 mb-0.5">
             <Barcode className="w-3 h-3" /> UPC
           </span>
-          <span className="font-mono font-medium text-slate-700 block truncate">
-            {record.upc || 'N/A'}
-          </span>
+          <CopyUPCButton
+            upc={record.upc}
+            prefix=""
+            showIcon={false}
+            onToast={onToast}
+            className="w-full justify-between"
+          />
         </div>
 
         <div>
