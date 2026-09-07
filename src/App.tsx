@@ -442,12 +442,12 @@ export const App: React.FC = () => {
 
       // 2. Search Filter (SKU, Description, UPC, Reason, SecondReason, SubDep)
       if (query) {
-        const skuMatch = record.sku.toLowerCase().includes(query);
-        const descMatch = record.description.toLowerCase().includes(query);
-        const upcMatch = record.upc.toLowerCase().includes(query);
-        const reasonMatch = record.reason.toLowerCase().includes(query);
-        const secondReasonMatch = (record.secondReason || '').toLowerCase().includes(query);
-        const subDepMatch = (record.subDep || '').toLowerCase().includes(query);
+        const skuMatch = String(record.sku || '').toLowerCase().includes(query);
+        const descMatch = String(record.description || '').toLowerCase().includes(query);
+        const upcMatch = String(record.upc || '').toLowerCase().includes(query);
+        const reasonMatch = String(record.reason || '').toLowerCase().includes(query);
+        const secondReasonMatch = String(record.secondReason || '').toLowerCase().includes(query);
+        const subDepMatch = String(record.subDep || '').toLowerCase().includes(query);
 
         if (
           !skuMatch &&

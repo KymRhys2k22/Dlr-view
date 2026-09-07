@@ -2,7 +2,30 @@ import { RawSupabaseDLRRecord, DLRRecord } from '../types/dlr';
 import { getDepartmentName } from './getDepartmentName';
 import { optimizeImageUrl } from './imageUrl';
 
-export function normalizeDlrRecord(raw: RawSupabaseDLRRecord, index = 0): DLRRecord {
+export function normalizeDlrRecord(raw: RawSupabaseDLRRecord | null | undefined, index = 0): DLRRecord {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: `dlr_fallback_${index}_${Date.now()}`,
+      sku: '',
+      description: '',
+      upc: '',
+      cost: 0,
+      costRaw: '0',
+      price: 0,
+      priceRaw: '0',
+      reason: 'Unknown Reason',
+      secondReason: null,
+      qty: 1,
+      storeCode: '',
+      images: [],
+      departmentCode: null,
+      departmentName: 'Unknown',
+      subDep: null,
+      dlrNumber: null,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
   // Extract department code/string safely from Supabase
   const rawDept =
     raw.Department ??
@@ -34,14 +57,15 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord, index = 0): DLRRec
     try {
       const parsed = JSON.parse(rawImages);
       if (Array.isArray(parsed)) imageList = parsed;
+      else if (typeof parsed === 'string') imageList = [parsed];
       else imageList = [rawImages];
     } catch {
       imageList = rawImages.split(',').map((s: string) => s.trim());
     }
   }
   const images = imageList
-    .filter(Boolean)
-    .map((img) => optimizeImageUrl(String(img).trim()));
+    .filter((img): img is string => typeof img === 'string' && img.trim().length > 0 && img.trim().startsWith('http'))
+    .map((img) => optimizeImageUrl(img.trim()));
 
   // Parse numeric cost safely
   const rawCostStr = String(raw.Cost ?? raw.cost ?? '0').trim();

@@ -66,7 +66,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
       if (a.lastUpdated && b.lastUpdated) {
         return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
       }
-      return a.dlrNumber.localeCompare(b.dlrNumber);
+      return String(a.dlrNumber || '').localeCompare(String(b.dlrNumber || ''));
     });
   }, [records]);
 
@@ -76,13 +76,13 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     if (!q) return groups;
 
     return groups.filter((g) => {
-      const matchDlr = g.dlrNumber.toLowerCase().includes(q);
-      const matchDept = g.departments.some((d) => d.toLowerCase().includes(q));
+      const matchDlr = String(g.dlrNumber || '').toLowerCase().includes(q);
+      const matchDept = g.departments.some((d) => String(d || '').toLowerCase().includes(q));
       const matchItems = g.records.some(
         (r) =>
-          r.sku.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q) ||
-          r.upc.toLowerCase().includes(q)
+          String(r.sku || '').toLowerCase().includes(q) ||
+          String(r.description || '').toLowerCase().includes(q) ||
+          String(r.upc || '').toLowerCase().includes(q)
       );
       return matchDlr || matchDept || matchItems;
     });

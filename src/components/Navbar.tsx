@@ -99,10 +99,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Store className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               <div className="flex flex-col text-left">
                 <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-                  Store #{session.storeCode}
+                  Store #{session?.storeCode || 'N/A'}
                 </span>
                 <span className="font-medium text-slate-200 truncate max-w-[160px] lg:max-w-[220px]">
-                  {session.storeName}
+                  {session?.storeName || 'Daiso Store'}
                 </span>
               </div>
             </div>
@@ -110,14 +110,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* User Profile Info */}
             <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-slate-800/80 rounded-xl border border-slate-700/80 text-xs">
               <div className="w-6 h-6 rounded-full bg-rose-600/30 border border-rose-500/40 text-rose-300 flex items-center justify-center font-bold text-xs shrink-0">
-                {session.name.charAt(0).toUpperCase()}
+                {(session?.name || 'User').charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-col text-left">
                 <span className="font-semibold text-slate-200 truncate max-w-[90px] sm:max-w-[120px]">
-                  {session.name}
+                  {session?.name || 'User'}
                 </span>
                 <span className="text-[10px] text-slate-400 md:hidden">
-                  #{session.storeCode}
+                  #{session?.storeCode || ''}
                 </span>
               </div>
             </div>

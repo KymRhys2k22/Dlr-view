@@ -19,7 +19,7 @@ export function optimizeImageUrl(url: string | null | undefined): string {
 
   // If it's a Cloudinary upload URL, insert /w_700/ right after /upload/
   // Also cleanly replaces existing width parameter if present (e.g. /upload/w_1200/)
-  if (trimmed.includes('/upload/')) {
+  if (trimmed.includes('cloudinary.com') && trimmed.includes('/upload/')) {
     return trimmed.replace(/\/upload\/(?:w_\d+\/)?/, '/upload/w_700/');
   }
 
@@ -37,5 +37,5 @@ export function getOriginalImageUrl(url: string | null | undefined): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
 
-  return trimmed.replace(/\/upload\/w_\d+\//, '/upload/');
+  return trimmed.replace(/\/upload\/(?:w_\d+\/)?/, '/upload/');
 }

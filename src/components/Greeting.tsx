@@ -29,7 +29,7 @@ export const Greeting: React.FC<GreetingProps> = ({ session }) => {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              {timeGreeting}, <span className="text-rose-600">{session.name}</span>!
+              {timeGreeting}, <span className="text-rose-600">{session?.name || 'User'}</span>!
             </h2>
             <Sparkles className="w-5 h-5 text-amber-500 hidden sm:inline" />
           </div>
@@ -49,9 +49,9 @@ export const Greeting: React.FC<GreetingProps> = ({ session }) => {
                 Active Store
               </div>
               <div className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                <span>{session.storeName}</span>
+                <span>{session?.storeName || 'Daiso Store'}</span>
                 <span className="font-mono text-[11px] font-semibold text-rose-600 px-1.5 py-0.2 rounded bg-rose-50 border border-rose-200">
-                  #{session.storeCode}
+                  #{session?.storeCode || 'N/A'}
                 </span>
               </div>
             </div>

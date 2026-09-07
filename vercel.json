@@ -5,11 +5,20 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/|sw\\.js|registerSW\\.js|favicon\\.svg|manifest\\.webmanifest|.*\\.(?:js|css|json|svg|png|jpg|jpeg|ico|woff2)).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/(sw\\.js|registerSW\\.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [
