@@ -9,6 +9,7 @@ import {
   unfileDLRRecordInSupabase,
   updateDLRStatusInSupabase,
 } from './services/dlrService';
+import { deleteCloudinaryImages } from './services/cloudinaryService';
 import { LoginForm } from './components/LoginForm';
 import { Navbar } from './components/Navbar';
 import { Greeting } from './components/Greeting';
@@ -371,7 +372,25 @@ export const App: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!recordToDelete) return;
     setIsDeleting(true);
+    let cloudUnclean = '';
     try {
+      // 1. Attempt to delete associated Cloudinary images first
+      const { publicIds } = await deleteCloudinaryImages(recordToDelete.images).catch(
+        (err: unknown) => {
+          cloudUnclean = err instanceof Error ? err.message : 'Unknown Cloudinary error';
+          return { publicIds: [], deleted: {} };
+        }
+      );
+      if (publicIds.length > 0 && !cloudUnclean) {
+        addToast(
+          publicIds.length > 1
+            ? `Deleted ${publicIds.length} images from Cloudinary.`
+            : 'Deleted image from Cloudinary.',
+          'success'
+        );
+      }
+
+      // 2. Delete the record from Supabase
       await deleteDLRRecordFromSupabase(recordToDelete.id);
       setRecords((prev) => prev.filter((r) => r.id !== recordToDelete.id));
       setSelectedRecordIds((prev) => {
@@ -384,6 +403,11 @@ export const App: React.FC = () => {
         'success'
       );
       setRecordToDelete(null);
+      if (cloudUnclean) {
+        setTimeout(() => {
+          addToast(`Record deleted, but image cleanup failed: ${cloudUnclean}`, 'error');
+        }, 100);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to delete record';
       addToast(msg, 'error');
