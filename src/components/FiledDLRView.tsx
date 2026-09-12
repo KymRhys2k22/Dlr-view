@@ -17,6 +17,7 @@ interface FiledDLRViewProps {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onUnfileRecord?: (recordId: string) => Promise<void>;
   onUpdateDLRNumber?: (recordIds: string[], newDlrNumber: string) => Promise<void>;
+  onToggleApproved?: (recordIds: string[], currentStatus: string | null) => Promise<void>;
 }
 
 export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
@@ -26,6 +27,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
   onToast,
   onUnfileRecord,
   onUpdateDLRNumber,
+  onToggleApproved,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<FiledDLRGroup | null>(null);
@@ -49,6 +51,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
       const totalCost = groupRecords.reduce((acc, r) => acc + (r.cost || 0) * (r.qty || 0), 0);
       const depts = Array.from(new Set(groupRecords.map((r) => r.departmentName).filter(Boolean)));
       const latestDate = groupRecords[0]?.createdAt;
+      const status = groupRecords[0]?.status ?? null;
 
       list.push({
         dlrNumber,
@@ -57,6 +60,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
         totalQuantity: totalQty,
         totalCost,
         departments: depts,
+        status,
         lastUpdated: latestDate,
       });
     });
@@ -96,6 +100,23 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     const totalLoss = groups.reduce((acc, g) => acc + g.totalCost, 0);
     return { totalFiles, totalItems, totalQty, totalLoss };
   }, [groups]);
+
+  const handleToggleApproved = async (recordIds: string[], currentStatus: string | null) => {
+    if (!onToggleApproved) return;
+    await onToggleApproved(recordIds, currentStatus);
+
+    setSelectedGroup((prev) => {
+      if (!prev) return null;
+      const newStatus = currentStatus === 'approved' ? null : 'approved';
+      return {
+        ...prev,
+        status: newStatus,
+        records: prev.records.map((r) =>
+          recordIds.includes(r.id) ? { ...r, status: newStatus } : r
+        ),
+      };
+    });
+  };
 
   const handleUpdateDlr = async (recordIds: string[], newDlrNumber: string) => {
     if (!onUpdateDLRNumber) return;
@@ -227,6 +248,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
               group={group}
               onClick={(g) => setSelectedGroup(g)}
               onEditDlr={(g) => setGroupToEdit(g)}
+              onToggleApproved={onToggleApproved ? handleToggleApproved : undefined}
             />
           ))}
         </div>

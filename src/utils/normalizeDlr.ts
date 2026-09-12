@@ -22,6 +22,7 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord | null | undefined,
       departmentName: 'Unknown',
       subDep: null,
       dlrNumber: null,
+      status: null,
       createdAt: new Date().toISOString(),
     };
   }
@@ -105,6 +106,11 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord | null | undefined,
     ? String(rawDlrNumber).trim()
     : null;
 
+  const rawStatus = raw.Status ?? raw.status ?? null;
+  const status = rawStatus && String(rawStatus).trim() !== '' && String(rawStatus).trim() !== 'null'
+    ? String(rawStatus).trim().toLowerCase()
+    : null;
+
   return {
     id: raw.id ?? `dlr_${raw.idx ?? index}_${Date.now()}`,
     sku: String(raw.SKU ?? raw.sku ?? '').trim(),
@@ -123,6 +129,7 @@ export function normalizeDlrRecord(raw: RawSupabaseDLRRecord | null | undefined,
     departmentName,
     subDep,
     dlrNumber,
+    status,
     createdAt: raw.created_at,
   };
 }

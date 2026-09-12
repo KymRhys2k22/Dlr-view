@@ -267,6 +267,34 @@ export function subscribeToDLRChanges({
 }
 
 /**
+ * Update the 'Status' column for one or more DLR records in Supabase
+ */
+export async function updateDLRStatusInSupabase(
+  recordIds: string[],
+  status: string | null
+): Promise<void> {
+  if (!recordIds.length) return;
+
+  let { error } = await supabase
+    .from('dlr_records')
+    .update({ Status: status })
+    .in('id', recordIds);
+
+  if (error && (error.code === 'PGRST205' || error.message.includes('not find the table') || error.code === '42P01')) {
+    const fallback = await supabase
+      .from('dlr_unsigned')
+      .update({ Status: status })
+      .in('id', recordIds);
+    error = fallback.error;
+  }
+
+  if (error) {
+    console.error('Supabase update Status error:', error.message);
+    throw new Error(error.message || 'Failed to update Status in database');
+  }
+}
+
+/**
  * Update the 'dlr-number' column for one or more DLR records in Supabase
  */
 export async function updateDLRNumberInSupabase(

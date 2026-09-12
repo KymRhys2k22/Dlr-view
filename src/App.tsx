@@ -7,6 +7,7 @@ import {
   subscribeToDLRChanges,
   updateDLRNumberInSupabase,
   unfileDLRRecordInSupabase,
+  updateDLRStatusInSupabase,
 } from './services/dlrService';
 import { LoginForm } from './components/LoginForm';
 import { Navbar } from './components/Navbar';
@@ -257,6 +258,7 @@ export const App: React.FC = () => {
       departmentName: 'Houseware',
       subDep: 'Storage & Organization',
       dlrNumber: null,
+      status: null,
       createdAt: new Date().toISOString(),
     };
 
@@ -559,6 +561,27 @@ export const App: React.FC = () => {
     );
   };
 
+  // Toggle Approved status for filed items
+  const handleToggleApproved = async (recordIds: string[], currentStatus: string | null) => {
+    const newStatus = currentStatus === 'approved' ? null : 'approved';
+    if (!recordIds.length) return;
+
+    await updateDLRStatusInSupabase(recordIds, newStatus);
+
+    setRecords((prev) =>
+      prev.map((r) =>
+        recordIds.includes(r.id) ? { ...r, status: newStatus } : r
+      )
+    );
+
+    addToast(
+      newStatus === 'approved'
+        ? `Approved ${recordIds.length} item(s) under this DLR!`
+        : `Unapproved ${recordIds.length} item(s) under this DLR.`,
+      'success'
+    );
+  };
+
   // Selected records list for Assign Modal preview
   const selectedRecordsList = useMemo(() => {
     return filteredActiveRecords.filter((r) => selectedRecordIds.has(r.id));
@@ -832,6 +855,7 @@ export const App: React.FC = () => {
                 onToast={addToast}
                 onUnfileRecord={handleUnfileRecord}
                 onUpdateDLRNumber={handleUpdateDLRNumber}
+                onToggleApproved={handleToggleApproved}
               />
             )}
           </>

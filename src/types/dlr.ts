@@ -42,6 +42,8 @@ export interface RawSupabaseDLRRecord {
   dlrNumber?: string | null;
   'DLR Number'?: string | null;
   'DLRNumber'?: string | null;
+  Status?: string | null;
+  status?: string | null;
   created_at?: string;
 }
 
@@ -63,6 +65,7 @@ export interface DLRRecord {
   departmentName: string;
   subDep: string | null;
   dlrNumber: string | null;
+  status: string | null;
   createdAt?: string;
 }
 
@@ -73,6 +76,7 @@ export interface FiledDLRGroup {
   totalQuantity: number;
   totalCost: number;
   departments: string[];
+  status: string | null;
   lastUpdated?: string;
 }
 

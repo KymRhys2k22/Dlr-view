@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, ChevronRight, Package, Calendar, Pencil } from 'lucide-react';
+import { FileText, ChevronRight, Package, Calendar, Pencil, Check } from 'lucide-react';
 import { FiledDLRGroup } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 
@@ -7,9 +7,11 @@ interface FiledDLRCardProps {
   group: FiledDLRGroup;
   onClick: (group: FiledDLRGroup) => void;
   onEditDlr?: (group: FiledDLRGroup) => void;
+  onToggleApproved?: (recordIds: string[], currentStatus: string | null) => void;
 }
 
-export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({ group, onClick, onEditDlr }) => {
+export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({ group, onClick, onEditDlr, onToggleApproved }) => {
+  const isApproved = group.status === 'approved';
   return (
     <div
       onClick={() => onClick(group)}
@@ -38,9 +40,33 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({ group, onClick, onEd
                 <Pencil className="w-3.5 h-3.5" />
               </button>
             )}
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              Filed
-            </span>
+             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+               Filed
+             </span>
+             {onToggleApproved && (
+               <button
+                 type="button"
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   onToggleApproved(
+                     group.records.map((r) => r.id),
+                     group.status
+                   );
+                 }}
+                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                   isApproved ? 'bg-emerald-500' : 'bg-slate-300'
+                 }`}
+                 title={isApproved ? 'Approved (click to unapprove)' : 'Mark as approved'}
+               >
+                 <span
+                   className={`relative inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                     isApproved ? 'translate-x-[17px]' : 'translate-x-[3px]'
+                   }`}
+                 >
+                   {isApproved && <Check className="absolute w-2.5 h-2.5 text-emerald-500 top-[1px] left-[1px]" />}
+                 </span>
+               </button>
+             )}
           </div>
           {group.lastUpdated && (
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
