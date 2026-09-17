@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Search, FolderCheck } from 'lucide-react';
+import { Search, FolderCheck, FileSpreadsheet } from 'lucide-react';
 import { FiledDLRGroup, DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
+import { exportDLRToExcel } from '../utils/exportExcel';
 import { FiledDLRCard } from './FiledDLRCard';
 import { FiledDLRDetailModal } from './FiledDLRDetailModal';
 import { EditDLRModal } from './EditDLRModal';
@@ -9,6 +10,7 @@ import { EditDLRModal } from './EditDLRModal';
 interface FiledDLRViewProps {
   records: DLRRecord[];
   storeCode: string;
+  mode?: 'filed' | 'approved';
   onOpenImageModal: (
     url: string,
     type: string,
@@ -23,6 +25,7 @@ interface FiledDLRViewProps {
 export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
   records,
   storeCode,
+  mode = 'filed',
   onOpenImageModal,
   onToast,
   onUnfileRecord,
@@ -32,6 +35,8 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<FiledDLRGroup | null>(null);
   const [groupToEdit, setGroupToEdit] = useState<FiledDLRGroup | null>(null);
+
+  const isApprovedMode = mode === 'approved';
 
   // Group filed records by dlrNumber
   const groups = useMemo<FiledDLRGroup[]>(() => {
@@ -92,7 +97,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     });
   }, [groups, searchQuery]);
 
-  // Overall Filed Stats
+  // Overall Stats
   const overallStats = useMemo(() => {
     const totalFiles = groups.length;
     const totalItems = groups.reduce((acc, g) => acc + g.totalRecords, 0);
@@ -154,23 +159,52 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     });
   };
 
+  const handleExportAllBatches = () => {
+    try {
+      const recordsToExport = filteredGroups.flatMap((g) => g.records);
+      const modeLabel = isApprovedMode ? 'approved' : 'filed';
+      if (recordsToExport.length === 0) {
+        onToast(`No ${modeLabel} records to export`, 'info');
+        return;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const uniqueDlrs = Array.from(
+        new Set(filteredGroups.map((g) => g.dlrNumber).filter(Boolean))
+      ).join(', ');
+      const prefix = isApprovedMode ? 'Approved' : 'Filed';
+      exportDLRToExcel(recordsToExport, `All_${prefix}`, storeCode, {
+        isApproved: isApprovedMode,
+        isFiled: !isApprovedMode,
+        includeImages: false,
+        dlrNumber: uniqueDlrs || `All ${prefix}`,
+        filenameOverride: `DLR_All_${prefix}_${today}.xlsx`,
+      });
+      onToast(`Exported ${recordsToExport.length} ${modeLabel} records to Excel!`, 'success');
+    } catch (err) {
+      console.error(`Failed to export all ${isApprovedMode ? 'approved' : 'filed'} records:`, err);
+      onToast('Failed to export Excel file', 'error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="apple-card p-4 sm:p-5">
           <div className="text-[11px] font-semibold text-slate-400 sf-caption">
-            Filed DLR Batches
+            {isApprovedMode ? 'Approved DLR Cards' : 'Filed DLR Cards'}
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
+          <div className={`text-xl sm:text-2xl font-bold sf-display mt-1 ${isApprovedMode ? 'text-emerald-700' : 'text-[#1D1D1F]'}`}>
             {overallStats.totalFiles}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Assigned report batches</div>
+          <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">
+            {isApprovedMode ? 'Cards verified' : 'Cards awaiting approval'}
+          </div>
         </div>
 
         <div className="apple-card p-4 sm:p-5">
           <div className="text-[11px] font-semibold text-slate-400 sf-caption">
-            Total Filed Items
+            {isApprovedMode ? 'Total Approved Items' : 'Total Filed Items'}
           </div>
           <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
             {overallStats.totalItems}
@@ -180,7 +214,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
 
         <div className="apple-card p-4 sm:p-5">
           <div className="text-[11px] font-semibold text-slate-400 sf-caption">
-            Total Filed Units
+            {isApprovedMode ? 'Total Approved Units' : 'Total Filed Units'}
           </div>
           <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
             {overallStats.totalQty} <span className="text-sm font-normal text-slate-400">pcs</span>
@@ -189,55 +223,93 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
         </div>
 
         <div className="apple-card p-4 sm:p-5">
-          <div className="text-[11px] font-semibold text-rose-600/90 sf-caption">
-            Total Filed Loss
+          <div className={`text-[11px] font-semibold sf-caption ${isApprovedMode ? 'text-emerald-700' : 'text-rose-600/90'}`}>
+            {isApprovedMode ? 'Total Approved Loss' : 'Total Filed Loss'}
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-rose-600 sf-display mt-1">
+          <div className={`text-xl sm:text-2xl font-bold sf-display mt-1 ${isApprovedMode ? 'text-emerald-600' : 'text-rose-600'}`}>
             {formatCurrencyPHP(overallStats.totalLoss)}
           </div>
           <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Audited cost sum</div>
         </div>
       </div>
 
-      {/* Controls Bar */}
+      {/* Controls Bar: Search & Actions */}
       <div className="apple-card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by DLR Number, SKU, description, or department..."
-            className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-black/[0.04] focus:bg-white border border-black/[0.05] focus:border-black/[0.15] rounded-xl focus:outline-none focus:ring-2 focus:ring-black/[0.04] transition-all text-[#1D1D1F] placeholder:text-slate-400 sf-subheadline"
+            placeholder={`Search ${isApprovedMode ? 'approved' : 'filed'} batches by DLR, SKU, description...`}
+            className="w-full pl-9.5 pr-4 py-2 text-xs sm:text-sm bg-black/[0.03] focus:bg-white border border-black/[0.06] focus:border-black/[0.2] rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all text-[#1D1D1F] placeholder:text-slate-400 sf-subheadline"
           />
         </div>
-        <div className="text-xs text-slate-500 font-semibold sf-caption px-2 shrink-0">
-          Showing {filteredGroups.length} of {groups.length} batch(es)
+        <div className="flex items-center justify-between sm:justify-end gap-3 px-1 flex-wrap">
+          <div className="text-xs text-slate-500 font-semibold sf-caption shrink-0">
+            Showing {filteredGroups.length} of {groups.length} card(s)
+          </div>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="text-xs text-slate-500 hover:text-[#1D1D1F] px-2.5 py-1 rounded-lg hover:bg-black/[0.05] transition-colors cursor-pointer apple-pressable sf-subheadline shrink-0"
+            >
+              Clear
+            </button>
+          )}
+          {filteredGroups.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportAllBatches}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer apple-pressable sf-subheadline shadow-2xs shrink-0 ${
+                isApprovedMode
+                  ? 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/80'
+                  : 'text-rose-800 bg-rose-50 hover:bg-rose-100/90 border border-rose-200/80'
+              }`}
+              title={`Export all visible ${isApprovedMode ? 'approved' : 'filed'} cards to a single Excel file (without image links)`}
+            >
+              <FileSpreadsheet className={`w-3.5 h-3.5 ${isApprovedMode ? 'text-emerald-600' : 'text-rose-600'}`} />
+              <span>Export All ({filteredGroups.length})</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Cards Grid or Empty State */}
       {filteredGroups.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-8 sm:p-12 text-center space-y-3">
-          <div className="flex items-center justify-center w-14 h-14 mx-auto rounded-3xl bg-slate-100 text-slate-400">
+        <div className="apple-card rounded-3xl p-10 sm:p-14 text-center space-y-3.5 border border-black/[0.06]">
+          <div className="flex items-center justify-center w-14 h-14 mx-auto rounded-2xl bg-black/[0.03] text-slate-400 border border-black/[0.05]">
             <FolderCheck className="w-7 h-7" />
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-800">
-            {groups.length === 0 ? 'No Filed DLRs Yet' : 'No Matching Filed DLRs'}
+          <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] sf-headline">
+            {isApprovedMode
+              ? groups.length === 0
+                ? 'No Approved DLR Cards Yet'
+                : 'No Matching Approved Cards'
+              : groups.length === 0
+              ? 'No Filed DLR Cards'
+              : 'No Matching Filed Cards'}
           </h3>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-            {groups.length === 0
-              ? 'Filter by department in Active Audit, select items, and click "Assign DLR Number" to file them into this archive.'
-              : 'No filed DLR records match your search criteria. Try a different keyword.'}
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto sf-subheadline leading-relaxed">
+            {isApprovedMode
+              ? groups.length === 0
+                ? 'You have not approved any filed batches yet. Open the Filed DLRs tab and toggle the approval switch on any card.'
+                : 'No approved DLR cards match your search criteria. Try a different keyword.'
+              : groups.length === 0
+              ? 'There are currently no filed DLR cards awaiting approval. Assign a DLR number to items in Active Audit to file them here.'
+              : 'No filed DLR cards match your search criteria. Try a different keyword.'}
           </p>
           {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors cursor-pointer"
-            >
-              Clear Search
-            </button>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="px-4 py-2 rounded-full text-xs font-semibold text-slate-700 bg-black/[0.05] hover:bg-black/[0.08] transition-colors cursor-pointer apple-pressable sf-subheadline"
+              >
+                Clear Search
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -249,6 +321,8 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
               onClick={(g) => setSelectedGroup(g)}
               onEditDlr={(g) => setGroupToEdit(g)}
               onToggleApproved={onToggleApproved ? handleToggleApproved : undefined}
+              onToast={onToast}
+              storeCode={storeCode}
             />
           ))}
         </div>

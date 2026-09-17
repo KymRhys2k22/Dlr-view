@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileSpreadsheet, Layers, RotateCcw, Loader2, Pencil, Check } from 'lucide-react';
+import { X, FileSpreadsheet, Layers, RotateCcw, Loader2, Pencil, Check, FileText } from 'lucide-react';
 import { FiledDLRGroup } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
 import { CopySKUButton } from './CopySKUButton';
 import { CopyUPCButton } from './CopyUPCButton';
 import { exportDLRToExcel } from '../utils/exportExcel';
+import { exportFiledDLRToPdf } from '../utils/exportPdf';
 
 interface FiledDLRDetailModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [recordDlrInput, setRecordDlrInput] = useState('');
   const [isSavingRecord, setIsSavingRecord] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   useEffect(() => {
     if (group) {
@@ -110,11 +112,39 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
 
   const handleExportExcel = () => {
     try {
-      exportDLRToExcel(group.records, `Filed_${group.dlrNumber}`, storeCode);
+      const isApproved = group.status === 'approved';
+      const today = new Date().toISOString().split('T')[0];
+      const prefix = isApproved ? 'Approved' : 'Filed';
+      exportDLRToExcel(group.records, `${prefix}_${group.dlrNumber}`, storeCode, {
+        isApproved,
+        isFiled: !isApproved,
+        includeImages: false,
+        dlrNumber: group.dlrNumber,
+        filenameOverride: `DLR_${prefix}_${group.dlrNumber}_${today}.xlsx`,
+      });
       onToast(`Exported DLR #${group.dlrNumber} to Excel!`, 'success');
     } catch (err) {
       console.error(err);
       onToast('Failed to export Excel file', 'error');
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!group || isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    try {
+      const isApproved = group.status === 'approved';
+      onToast(`Building PDF report with item photos for DLR #${group.dlrNumber}...`, 'info');
+      await exportFiledDLRToPdf(group.records, group.dlrNumber, storeCode, {
+        status: group.status,
+        isApproved,
+      });
+      onToast(`Downloaded PDF report for DLR #${group.dlrNumber}!`, 'success');
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+      onToast('Failed to export PDF file', 'error');
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -208,7 +238,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
             )}
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] leading-tight sf-headline">
-                Filed DLR Report
+                {group.status === 'approved' ? 'Approved DLR Report' : 'Filed DLR Report'}
               </h3>
               <p className="text-xs text-slate-500 sf-subheadline">
                 {group.totalRecords} record(s) · {group.totalQuantity} total pcs · {formatCurrencyPHP(group.totalCost)} total loss
@@ -217,6 +247,22 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={isGeneratingPdf}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors cursor-pointer apple-pressable sf-subheadline disabled:opacity-60"
+              title="Download official PDF report with item photos"
+            >
+              {isGeneratingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">
+                {isGeneratingPdf ? 'Building PDF...' : 'Export PDF'}
+              </span>
+            </button>
             <button
               type="button"
               onClick={handleExportExcel}

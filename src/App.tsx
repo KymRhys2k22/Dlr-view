@@ -32,7 +32,7 @@ import { AssignDLRModal } from './components/AssignDLRModal';
 import { FiledDLRView } from './components/FiledDLRView';
 import { playNotificationSound } from './utils/audio';
 import { sendBrowserNotification, updateAppBadge } from './utils/webNotification';
-import { LayoutGrid, Table as TableIcon, ClipboardList, Archive } from 'lucide-react';
+import { LayoutGrid, Table as TableIcon, ClipboardList, Archive, CheckCircle2 } from 'lucide-react';
 
 const SESSION_STORAGE_KEY = 'daiso_dlr_session_v1';
 
@@ -49,8 +49,8 @@ export const App: React.FC = () => {
     }
   });
 
-  // Top View Navigation: 'active' (Unfiled) vs 'filed' (Archived with DLR number)
-  const [pageView, setPageView] = useState<'active' | 'filed'>('active');
+  // Top View Navigation: 'active' (Unfiled) vs 'filed' (Archived) vs 'approved' (Approved batches)
+  const [pageView, setPageView] = useState<'active' | 'filed' | 'approved'>('active');
 
   // Data fetching state
   const [records, setRecords] = useState<DLRRecord[]>([]);
@@ -421,9 +421,27 @@ export const App: React.FC = () => {
     return records.filter((r) => !r.dlrNumber);
   }, [records]);
 
+  // Filed records: only those with a DLR number that are NOT approved
   const filedRecords = useMemo(() => {
-    return records.filter((r) => Boolean(r.dlrNumber));
+    return records.filter((r) => Boolean(r.dlrNumber) && r.status !== 'approved');
   }, [records]);
+
+  // Approved records: only those with a DLR number that ARE approved
+  const approvedRecords = useMemo(() => {
+    return records.filter((r) => Boolean(r.dlrNumber) && r.status === 'approved');
+  }, [records]);
+
+  // Distinct batch card count to display in Filed DLRs tab
+  const filedCardCount = useMemo(() => {
+    const uniqueDlrs = new Set(filedRecords.map((r) => r.dlrNumber).filter(Boolean));
+    return uniqueDlrs.size;
+  }, [filedRecords]);
+
+  // Distinct batch card count to display in Approved tab
+  const approvedCardCount = useMemo(() => {
+    const uniqueDlrs = new Set(approvedRecords.map((r) => r.dlrNumber).filter(Boolean));
+    return uniqueDlrs.size;
+  }, [approvedRecords]);
 
   // Check if department filtering is active (a specific department chip is chosen)
   const isDepartmentFilterActive = useMemo(() => {
@@ -600,8 +618,8 @@ export const App: React.FC = () => {
 
     addToast(
       newStatus === 'approved'
-        ? `Approved ${recordIds.length} item(s) under this DLR!`
-        : `Unapproved ${recordIds.length} item(s) under this DLR.`,
+        ? `Approved ${recordIds.length} item(s)! Moved to Approved tab.`
+        : `Unapproved ${recordIds.length} item(s). Moved back to Filed DLRs tab.`,
       'success'
     );
   };
@@ -710,7 +728,32 @@ export const App: React.FC = () => {
                   : 'bg-black/[0.06] text-slate-600'
               }`}
             >
-              {filedRecords.length}
+              {filedCardCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPageView('approved');
+              setSelectedRecordIds(new Set());
+            }}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer apple-pressable select-none ${
+              pageView === 'approved'
+                ? 'bg-white text-emerald-700 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-emerald-200/50'
+                : 'text-slate-600 hover:text-[#1D1D1F]'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="sf-subheadline">Approved</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold sf-caption transition-colors ${
+                pageView === 'approved'
+                  ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60'
+                  : 'bg-black/[0.06] text-slate-600'
+              }`}
+            >
+              {approvedCardCount}
             </span>
           </button>
         </div>
@@ -874,10 +917,23 @@ export const App: React.FC = () => {
                   </>
                 )}
               </div>
+            ) : pageView === 'approved' ? (
+              /* Approved DLRs Page */
+              <FiledDLRView
+                records={approvedRecords}
+                mode="approved"
+                storeCode={session.storeCode}
+                onOpenImageModal={handleOpenImageModal}
+                onToast={addToast}
+                onUnfileRecord={handleUnfileRecord}
+                onUpdateDLRNumber={handleUpdateDLRNumber}
+                onToggleApproved={handleToggleApproved}
+              />
             ) : (
-              /* Filed DLRs Page / Archive View */
+              /* Filed DLRs Page (Approved items excluded) */
               <FiledDLRView
                 records={filedRecords}
+                mode="filed"
                 storeCode={session.storeCode}
                 onOpenImageModal={handleOpenImageModal}
                 onToast={addToast}
