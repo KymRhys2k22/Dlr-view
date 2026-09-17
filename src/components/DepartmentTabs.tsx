@@ -57,7 +57,7 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
   };
 
   return (
-    <div className="relative flex items-center gap-1.5 sm:gap-2 w-full">
+    <div className="relative flex items-center gap-2 w-full">
       {/* Left Navigation Button */}
       <button
         type="button"
@@ -65,13 +65,13 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
         disabled={!canScrollLeft}
         aria-label="Scroll departments left"
         title="Scroll left"
-        className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200/90 shadow-2xs text-slate-600 transition-all duration-150 shrink-0 ${
+        className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-black/[0.06] shadow-xs text-slate-600 apple-pressable shrink-0 ${
           canScrollLeft
-            ? 'hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 cursor-pointer active:scale-95 shadow-xs'
-            : 'opacity-30 cursor-not-allowed text-slate-300 border-slate-100 shadow-none'
+            ? 'hover:bg-slate-50 hover:text-[#1D1D1F] cursor-pointer'
+            : 'opacity-30 cursor-not-allowed text-slate-300 border-transparent shadow-none'
         }`}
       >
-        <ChevronLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+        <ChevronLeft className="w-4 h-4" />
       </button>
 
       {/* Chips Container */}
@@ -80,7 +80,7 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
         onScroll={checkScrollability}
         className="flex-1 overflow-x-auto pb-1 -mb-1 no-scrollbar scroll-smooth"
       >
-        <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 w-max min-w-full sm:min-w-0">
+        <div className="flex items-center gap-1.5 p-1 bg-black/[0.04] rounded-2xl border border-black/[0.04] w-max min-w-full sm:min-w-0">
           {DEPARTMENT_TABS.map((tab) => {
             const isActive = activeTab === tab;
             const count = counts[tab] ?? 0;
@@ -91,23 +91,23 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
                 key={tab}
                 type="button"
                 onClick={() => onTabChange(tab)}
-                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 shrink-0 select-none cursor-pointer ${
+                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 select-none cursor-pointer apple-pressable ${
                   isActive
-                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
+                    ? 'bg-white text-[#1D1D1F] shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.04]'
+                    : 'text-slate-600 hover:text-[#1D1D1F] hover:bg-white/60'
                 }`}
               >
-                <span>{tab}</span>
+                <span className="sf-subheadline">{tab}</span>
                 {hasNewItems && !isActive && (
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                 )}
                 <span
-                  className={`px-2 py-0.5 text-[11px] font-bold rounded-full transition-colors ${
+                  className={`px-2 py-0.5 text-[11px] font-semibold sf-caption rounded-full transition-colors ${
                     isActive
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-rose-50 text-rose-600 font-bold border border-rose-100'
                       : count > 0
-                      ? 'bg-slate-200/80 text-slate-700'
-                      : 'bg-slate-200/40 text-slate-400'
+                      ? 'bg-black/[0.06] text-slate-600'
+                      : 'bg-black/[0.03] text-slate-400'
                   }`}
                 >
                   {count}
@@ -125,13 +125,13 @@ export const DepartmentTabs: React.FC<DepartmentTabsProps> = ({
         disabled={!canScrollRight}
         aria-label="Scroll departments right"
         title="Scroll right"
-        className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200/90 shadow-2xs text-slate-600 transition-all duration-150 shrink-0 ${
+        className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-black/[0.06] shadow-xs text-slate-600 apple-pressable shrink-0 ${
           canScrollRight
-            ? 'hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 cursor-pointer active:scale-95 shadow-xs'
-            : 'opacity-30 cursor-not-allowed text-slate-300 border-slate-100 shadow-none'
+            ? 'hover:bg-slate-50 hover:text-[#1D1D1F] cursor-pointer'
+            : 'opacity-30 cursor-not-allowed text-slate-300 border-transparent shadow-none'
         }`}
       >
-        <ChevronRight className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+        <ChevronRight className="w-4 h-4" />
       </button>
     </div>
   );

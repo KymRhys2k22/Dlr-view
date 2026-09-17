@@ -43,12 +43,12 @@ export const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
       type="button"
       onClick={handleExport}
       disabled={isExporting || records.length === 0}
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm ${
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer apple-pressable sf-subheadline ${
         records.length === 0
-          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+          ? 'bg-black/[0.04] text-slate-400 border border-black/[0.06] cursor-not-allowed opacity-60'
           : isExporting
-          ? 'bg-emerald-600 text-white shadow-emerald-600/20'
-          : 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-emerald-600/20 hover:shadow-md'
+          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+          : 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800 text-white shadow-md shadow-emerald-700/25 border border-white/20'
       }`}
       title={`Export ${records.length} visible records to Excel (.xlsx)`}
     >
@@ -61,7 +61,7 @@ export const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
         <>
           <FileSpreadsheet className="w-4 h-4" />
           <span>Export Excel</span>
-          <span className="px-1.5 py-0.2 text-[11px] font-bold rounded-md bg-emerald-700/60 text-emerald-100">
+          <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-white/20 text-white">
             {records.length}
           </span>
         </>

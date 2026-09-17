@@ -51,61 +51,61 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
   if (isRealtime) {
     return (
       <div
-        className="pointer-events-auto flex flex-col gap-2 p-4 rounded-2xl bg-slate-900 text-white border-2 border-emerald-500/80 shadow-2xl shadow-emerald-500/20 transition-all duration-300"
+        className="pointer-events-auto flex flex-col gap-2.5 p-4 rounded-3xl apple-glass-floating text-[#1D1D1F] border border-black/[0.08] shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-3"
         role="alert"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/25 shrink-0">
               <Sparkles className="w-4 h-4 animate-pulse" />
             </span>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  {toast.title || 'New DLR Inserted'}
+                <span className="text-[11px] font-bold tracking-tight text-emerald-700 sf-caption">
+                  {toast.title || 'Live Activity'}
                 </span>
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
               </div>
-              <p className="text-xs text-slate-300 font-medium">
+              <p className="text-xs font-semibold text-[#1D1D1F] sf-headline">
                 {toast.message}
               </p>
             </div>
           </div>
           <button
             onClick={() => onDismiss(toast.id)}
-            className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors shrink-0"
+            className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-[#1D1D1F] rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors shrink-0 cursor-pointer apple-pressable"
             aria-label="Dismiss notification"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {toast.meta && (
-          <div className="bg-slate-800/90 rounded-xl p-2.5 border border-slate-700/80 text-xs space-y-1.5">
+          <div className="bg-black/[0.03] rounded-2xl p-3 border border-black/[0.04] text-xs space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono font-bold text-slate-100 bg-slate-700/80 px-2 py-0.5 rounded border border-slate-600">
+              <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full text-[11px]">
                 SKU: {toast.meta.sku || 'N/A'}
               </span>
               {toast.meta.qty !== undefined && (
-                <span className="font-bold text-rose-300 bg-rose-950/60 border border-rose-800 px-2 py-0.5 rounded">
+                <span className="font-bold text-rose-600 bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-full text-[11px] sf-headline">
                   Qty: {toast.meta.qty}
                 </span>
               )}
             </div>
             {toast.meta.description && (
-              <p className="font-medium text-slate-200 line-clamp-1">
+              <p className="font-medium text-slate-700 line-clamp-1 sf-subheadline">
                 {toast.meta.description}
               </p>
             )}
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-700/50 text-[11px] text-slate-400">
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-black/[0.04] text-[11px] text-slate-500 sf-caption">
               {toast.meta.department && (
-                <span className="flex items-center gap-1">
-                  <Package className="w-3 h-3 text-slate-500" />
+                <span className="flex items-center gap-1 font-medium">
+                  <Package className="w-3 h-3 text-slate-400" />
                   {toast.meta.department}
                 </span>
               )}
               {toast.meta.reason && (
-                <span className="text-amber-300 font-medium truncate max-w-[150px]">
+                <span className="text-amber-700 font-medium truncate max-w-[160px]">
                   • {toast.meta.reason}
                 </span>
               )}
@@ -119,32 +119,36 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
   const standardType = (toast.type === 'error' || toast.type === 'info') ? toast.type : 'success';
 
   const icons: Record<'success' | 'error' | 'info', React.ReactNode> = {
-    success: <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />,
-    error: <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />,
-    info: <Info className="w-5 h-5 text-blue-500 shrink-0" />,
+    success: <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />,
+    error: <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />,
+    info: <Info className="w-4 h-4 text-blue-600 shrink-0" />,
   };
 
-  const bgStyles: Record<'success' | 'error' | 'info', string> = {
-    success: 'bg-white border-emerald-200 text-slate-800 shadow-lg shadow-emerald-500/10',
-    error: 'bg-white border-rose-200 text-slate-800 shadow-lg shadow-rose-500/10',
-    info: 'bg-white border-blue-200 text-slate-800 shadow-lg shadow-blue-500/10',
+  const borderAccents: Record<'success' | 'error' | 'info', string> = {
+    success: 'border-emerald-500/20 bg-emerald-50/10',
+    error: 'border-rose-500/20 bg-rose-50/10',
+    info: 'border-blue-500/20 bg-blue-50/10',
   };
 
   return (
     <div
-      className={`pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-xl border transition-all duration-300 transform translate-y-0 opacity-100 ${bgStyles[standardType]}`}
+      className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-2xl apple-glass-floating border shadow-lg transition-all duration-300 animate-in slide-in-from-bottom-2 ${borderAccents[standardType]}`}
       role="alert"
     >
-      <div className="flex items-center gap-3 min-w-0">
-        {icons[standardType]}
-        <p className="text-sm font-medium leading-tight truncate">{toast.message}</p>
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="w-7 h-7 rounded-xl bg-black/[0.03] flex items-center justify-center shrink-0">
+          {icons[standardType]}
+        </span>
+        <p className="text-xs sm:text-sm font-semibold text-[#1D1D1F] leading-tight truncate sf-subheadline">
+          {toast.message}
+        </p>
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+        className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-[#1D1D1F] rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors shrink-0 cursor-pointer apple-pressable"
         aria-label="Dismiss notification"
       >
-        <X className="w-4 h-4" />
+        <X className="w-3.5 h-3.5" />
       </button>
     </div>
   );

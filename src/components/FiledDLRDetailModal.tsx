@@ -134,17 +134,17 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/50 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-black/[0.08] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/80 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.05] bg-black/[0.02] shrink-0">
           <div className="flex items-center gap-3">
             {isEditingBatchDlr ? (
               <form
@@ -158,13 +158,13 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                   onChange={(e) => setBatchDlrInput(e.target.value)}
                   disabled={isSavingBatch}
                   placeholder="DLR #"
-                  className="w-28 sm:w-36 text-xs sm:text-sm font-mono font-bold text-slate-900 focus:outline-none"
+                  className="w-28 sm:w-36 text-xs sm:text-sm font-mono font-bold text-[#1D1D1F] focus:outline-none"
                   autoFocus
                 />
                 <button
                   type="submit"
                   disabled={isSavingBatch || !batchDlrInput.trim()}
-                  className="p-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors cursor-pointer apple-pressable"
                   title="Save DLR Number"
                 >
                   {isSavingBatch ? (
@@ -180,7 +180,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                     setBatchDlrInput(group.dlrNumber);
                   }}
                   disabled={isSavingBatch}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-black/[0.04] transition-colors cursor-pointer apple-pressable"
                   title="Cancel"
                 >
                   <X className="w-4 h-4" />
@@ -188,7 +188,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
               </form>
             ) : (
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center justify-center px-3 py-1.5 rounded-xl bg-rose-600 text-white font-mono font-black text-sm sm:text-base shadow-sm">
+                <div className="flex items-center justify-center px-3 py-1 rounded-full bg-rose-600 text-white font-mono font-bold text-sm sm:text-base shadow-sm">
                   #{group.dlrNumber}
                 </div>
                 {onUpdateDLRNumber && (
@@ -198,19 +198,19 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
                       setBatchDlrInput(group.dlrNumber);
                       setIsEditingBatchDlr(true);
                     }}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                    className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors cursor-pointer apple-pressable"
                     title="Edit batch DLR number"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
             )}
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+              <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] leading-tight sf-headline">
                 Filed DLR Report
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 sf-subheadline">
                 {group.totalRecords} record(s) · {group.totalQuantity} total pcs · {formatCurrencyPHP(group.totalCost)} total loss
               </p>
             </div>
@@ -220,7 +220,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
             <button
               type="button"
               onClick={handleExportExcel}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer apple-pressable sf-subheadline"
               title="Export this DLR batch to Excel"
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -229,9 +229,9 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-[#1D1D1F] rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors cursor-pointer apple-pressable"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>

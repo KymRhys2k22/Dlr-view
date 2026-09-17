@@ -643,7 +643,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans antialiased">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col antialiased">
       {/* Top Navbar */}
       <Navbar
         session={session}
@@ -662,25 +662,27 @@ export const App: React.FC = () => {
         {/* Personalized Greeting */}
         <Greeting session={session} />
 
-        {/* View Switcher: Active Audit vs Filed DLRs */}
-        <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-xs mb-6 w-full sm:w-auto">
+        {/* View Switcher: Authentic Apple Segmented Control */}
+        <div className="inline-flex items-center p-1 bg-black/[0.06] rounded-2xl border border-black/[0.04] mb-6 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => {
               setPageView('active');
               setSelectedRecordIds(new Set());
             }}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer apple-pressable select-none ${
               pageView === 'active'
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-white text-[#1D1D1F] shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.04]'
+                : 'text-slate-600 hover:text-[#1D1D1F]'
             }`}
           >
-            <ClipboardList className="w-4 h-4" />
-            <span>Active Audit</span>
+            <ClipboardList className="w-4 h-4 text-slate-500" />
+            <span className="sf-subheadline">Active Audit</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-                pageView === 'active' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold sf-caption transition-colors ${
+                pageView === 'active'
+                  ? 'bg-rose-50 text-rose-600 font-bold border border-rose-100'
+                  : 'bg-black/[0.06] text-slate-600'
               }`}
             >
               {activeRecords.length}
@@ -693,17 +695,19 @@ export const App: React.FC = () => {
               setPageView('filed');
               setSelectedRecordIds(new Set());
             }}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer apple-pressable select-none ${
               pageView === 'filed'
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-white text-[#1D1D1F] shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.04]'
+                : 'text-slate-600 hover:text-[#1D1D1F]'
             }`}
           >
-            <Archive className="w-4 h-4" />
-            <span>Filed DLRs</span>
+            <Archive className="w-4 h-4 text-slate-500" />
+            <span className="sf-subheadline">Filed DLRs</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-                pageView === 'filed' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold sf-caption transition-colors ${
+                pageView === 'filed'
+                  ? 'bg-rose-50 text-rose-600 font-bold border border-rose-100'
+                  : 'bg-black/[0.06] text-slate-600'
               }`}
             >
               {filedRecords.length}
@@ -738,11 +742,11 @@ export const App: React.FC = () => {
                 {/* Department Filter Tabs with Badge Indicators */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <div className="text-[11px] font-semibold sf-caption text-slate-400">
                       Filter by Department
                     </div>
                     {isDepartmentFilterActive && (
-                      <span className="text-xs font-semibold text-rose-600">
+                      <span className="text-xs font-semibold text-rose-600 sf-subheadline">
                         {selectedDepartment} active · Checkboxes enabled
                       </span>
                     )}
@@ -772,7 +776,7 @@ export const App: React.FC = () => {
                 )}
 
                 {/* Controls Bar: Search, View Mode Toggle, Excel Export */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="apple-card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   {/* Search Bar */}
                   <SearchBar
                     value={searchQuery}
@@ -782,32 +786,32 @@ export const App: React.FC = () => {
 
                   <div className="flex items-center gap-2 shrink-0">
                     {/* View Mode Toggle (Desktop only) */}
-                    <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+                    <div className="hidden lg:flex items-center p-1 bg-black/[0.04] rounded-xl border border-black/[0.04]">
                       <button
                         type="button"
                         onClick={() => setViewMode('table')}
-                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all apple-pressable cursor-pointer ${
                           viewMode === 'table'
-                            ? 'bg-white text-slate-900 shadow-xs'
+                            ? 'bg-white text-[#1D1D1F] shadow-xs'
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                         title="Table View"
                       >
                         <TableIcon className="w-4 h-4" />
-                        <span>Table</span>
+                        <span className="sf-subheadline">Table</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setViewMode('cards')}
-                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all apple-pressable cursor-pointer ${
                           viewMode === 'cards'
-                            ? 'bg-white text-slate-900 shadow-xs'
+                            ? 'bg-white text-[#1D1D1F] shadow-xs'
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                         title="Card Grid View"
                       >
                         <LayoutGrid className="w-4 h-4" />
-                        <span>Cards</span>
+                        <span className="sf-subheadline">Cards</span>
                       </button>
                     </div>
 
@@ -887,7 +891,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
+      <footer className="mt-auto border-t border-black/[0.06] bg-white/60 backdrop-blur-md py-4 text-center text-xs text-slate-500 sf-subheadline">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             Daiso Damage & Lost Report (DLR) Portal · Store #{session.storeCode} ({session.storeName})

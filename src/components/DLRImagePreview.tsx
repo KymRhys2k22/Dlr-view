@@ -53,15 +53,15 @@ export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
         return (
           <div
             key={label}
-            className="flex flex-col items-center gap-1.5 p-1.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100/80 transition-colors w-24 sm:w-28 shrink-0"
+            className="flex flex-col items-center gap-1.5 p-1.5 rounded-2xl border border-black/[0.05] bg-black/[0.02] hover:bg-black/[0.04] transition-all w-24 sm:w-28 shrink-0"
           >
             {/* Thumbnail Box */}
             <div
               onClick={() =>
                 url && onOpenModal(url, label, { sku, upc, description, reason })
               }
-              className={`relative w-full aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white group select-none ${
-                url ? 'cursor-pointer' : 'cursor-default'
+              className={`relative w-full aspect-square rounded-xl overflow-hidden border border-black/[0.06] bg-white group select-none apple-pressable ${
+                url ? 'cursor-pointer shadow-2xs' : 'cursor-default'
               }`}
             >
               {url ? (
@@ -70,16 +70,16 @@ export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
                     src={url}
                     alt={`${label} photo`}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <ZoomIn className="w-5 h-5 text-white drop-shadow-md" />
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-1 bg-slate-50">
-                  <ImageOff className="w-5 h-5" />
-                  <span className="text-[10px] text-slate-400 font-medium">None</span>
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-1 bg-black/[0.02]">
+                  <ImageOff className="w-4 h-4" />
+                  <span className="text-[10px] text-slate-400 font-medium sf-caption">None</span>
                 </div>
               )}
             </div>
@@ -87,7 +87,7 @@ export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
             {/* Label and Copy Link Button */}
             <div className="flex flex-col items-center gap-1 w-full text-center">
               <span
-                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md border w-full truncate ${badgeColor}`}
+                className={`text-[10px] font-semibold sf-caption px-2 py-0.5 rounded-full border w-full truncate ${badgeColor}`}
               >
                 {label}
               </span>
@@ -101,7 +101,7 @@ export const DLRImagePreview: React.FC<DLRImagePreviewProps> = ({
                   onError={(msg) => onToast(msg, 'error')}
                 />
               ) : (
-                <span className="text-[10px] text-slate-400 py-1 select-none">No Link</span>
+                <span className="text-[10px] text-slate-400 py-1 select-none sf-caption">No Link</span>
               )}
             </div>
           </div>

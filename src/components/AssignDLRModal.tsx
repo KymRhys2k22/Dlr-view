@@ -63,26 +63,26 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-200"
       onClick={() => !isSubmitting && onClose()}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-black/[0.08] overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.05] bg-black/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 border border-rose-200 shrink-0">
+            <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+              <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] leading-tight sf-headline">
                 Assign DLR Number
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 sf-subheadline">
                 File and assign selected items under an official report number
               </p>
             </div>
@@ -91,27 +91,27 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-[#1D1D1F] rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition-colors disabled:opacity-50 apple-pressable cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Summary Box */}
-          <div className="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-center">
+          <div className="grid grid-cols-3 gap-3 p-3.5 bg-black/[0.025] rounded-2xl border border-black/[0.05] text-center">
             <div>
-              <div className="text-[11px] font-medium text-slate-500">Selected Items</div>
-              <div className="text-sm font-bold text-slate-900">{selectedRecords.length} items</div>
+              <div className="text-[11px] font-semibold sf-caption text-slate-400">Selected Items</div>
+              <div className="text-sm font-bold text-[#1D1D1F] sf-display">{selectedRecords.length} items</div>
             </div>
-            <div className="border-x border-slate-200">
-              <div className="text-[11px] font-medium text-slate-500">Total Units</div>
-              <div className="text-sm font-bold text-slate-900">{totalQty} pcs</div>
+            <div className="border-x border-black/[0.06]">
+              <div className="text-[11px] font-semibold sf-caption text-slate-400">Total Units</div>
+              <div className="text-sm font-bold text-[#1D1D1F] sf-display">{totalQty} pcs</div>
             </div>
             <div>
-              <div className="text-[11px] font-medium text-slate-500">Total Loss</div>
-              <div className="text-sm font-bold text-rose-600 font-mono">
+              <div className="text-[11px] font-semibold sf-caption text-slate-400">Total Loss</div>
+              <div className="text-sm font-bold text-rose-600 sf-headline">
                 {formatCurrencyPHP(totalCost)}
               </div>
             </div>
@@ -119,7 +119,7 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
 
           {/* DLR Number Input */}
           <div className="space-y-1.5">
-            <label htmlFor="dlr-number-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <label htmlFor="dlr-number-input" className="block text-[11px] font-semibold sf-caption text-slate-500 uppercase">
               Official DLR Number <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
@@ -134,16 +134,16 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
                 }}
                 disabled={isSubmitting}
                 placeholder="e.g. DLR-2026-001 or 202-DLR-088"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 transition-all uppercase"
+                className="w-full px-4 py-3 bg-black/[0.03] focus:bg-white border border-black/[0.08] focus:border-rose-500/80 rounded-xl text-sm font-semibold tracking-wide text-[#1D1D1F] placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-rose-500/15 transition-all uppercase sf-subheadline"
               />
             </div>
             {validationError ? (
-              <p className="flex items-center gap-1.5 text-xs font-medium text-rose-600 pt-1">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-rose-600 pt-1 sf-subheadline">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 <span>{validationError}</span>
               </p>
             ) : (
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 sf-subheadline">
                 Assigned records will move from Active Audit to the Filed DLRs archive.
               </p>
             )}
@@ -151,29 +151,29 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
 
           {/* Selected Records Preview List */}
           <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
-              <span>Items in this Batch ({selectedRecords.length})</span>
+            <div className="text-[11px] font-semibold sf-caption text-slate-400 uppercase">
+              Items in this Batch ({selectedRecords.length})
             </div>
-            <div className="max-h-40 overflow-y-auto divide-y divide-slate-100 rounded-xl border border-slate-200 bg-slate-50/50 p-1">
+            <div className="max-h-40 overflow-y-auto divide-y divide-black/[0.04] rounded-2xl border border-black/[0.05] bg-black/[0.02] p-1">
               {selectedRecords.map((item) => (
-                <div key={item.id} className="p-2 flex items-center justify-between gap-3 text-xs">
+                <div key={item.id} className="p-2.5 flex items-center justify-between gap-3 text-xs">
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <CopySKUButton sku={item.sku} className="text-[10px] py-0.2 px-1.5" />
+                      <CopySKUButton sku={item.sku} className="text-[10px] py-0 px-2" />
                       {item.upc && (
-                        <CopyUPCButton upc={item.upc} className="text-[10px] py-0.2 px-1.5" showIcon={false} />
+                        <CopyUPCButton upc={item.upc} className="text-[10px] py-0 px-2" showIcon={false} />
                       )}
-                      <span className="truncate font-medium text-slate-700">
+                      <span className="truncate font-medium text-[#1D1D1F] sf-subheadline">
                         {item.description || 'No description'}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                    <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 sf-subheadline">
                       <span>{item.departmentName}</span>
                       <span>·</span>
                       <span>Qty: {item.qty}</span>
                     </div>
                   </div>
-                  <div className="text-right shrink-0 font-mono font-semibold text-slate-800">
+                  <div className="text-right shrink-0 font-mono font-semibold text-[#1D1D1F]">
                     {formatCurrencyPHP(item.cost * item.qty)}
                   </div>
                 </div>
@@ -182,19 +182,19 @@ export const AssignDLRModal: React.FC<AssignDLRModalProps> = ({
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#1D1D1F] bg-black/[0.04] hover:bg-black/[0.08] transition-colors disabled:opacity-50 apple-pressable cursor-pointer sf-subheadline"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !dlrNumber.trim()}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 shadow-md shadow-rose-600/30 border border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed apple-pressable cursor-pointer sf-subheadline"
             >
               {isSubmitting ? (
                 <>

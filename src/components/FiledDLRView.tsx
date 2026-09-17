@@ -158,60 +158,60 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     <div className="space-y-6">
       {/* Header Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="apple-card p-4 sm:p-5">
+          <div className="text-[11px] font-semibold text-slate-400 sf-caption">
             Filed DLR Batches
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
             {overallStats.totalFiles}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Assigned report batches</div>
+          <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Assigned report batches</div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="apple-card p-4 sm:p-5">
+          <div className="text-[11px] font-semibold text-slate-400 sf-caption">
             Total Filed Items
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
             {overallStats.totalItems}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Across all departments</div>
+          <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Across all departments</div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="apple-card p-4 sm:p-5">
+          <div className="text-[11px] font-semibold text-slate-400 sf-caption">
             Total Filed Units
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-            {overallStats.totalQty} pcs
+          <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
+            {overallStats.totalQty} <span className="text-sm font-normal text-slate-400">pcs</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Total physical units</div>
+          <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Total physical units</div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="apple-card p-4 sm:p-5">
+          <div className="text-[11px] font-semibold text-rose-600/90 sf-caption">
             Total Filed Loss
           </div>
-          <div className="text-xl sm:text-2xl font-black text-rose-600 font-mono mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-rose-600 sf-display mt-1">
             {formatCurrencyPHP(overallStats.totalLoss)}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Audited cost sum</div>
+          <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Audited cost sum</div>
         </div>
       </div>
 
       {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="apple-card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by DLR Number, SKU, description, or department..."
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all text-slate-800 placeholder:text-slate-400"
+            className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm bg-black/[0.04] focus:bg-white border border-black/[0.05] focus:border-black/[0.15] rounded-xl focus:outline-none focus:ring-2 focus:ring-black/[0.04] transition-all text-[#1D1D1F] placeholder:text-slate-400 sf-subheadline"
           />
         </div>
-        <div className="text-xs text-slate-500 font-medium px-2 shrink-0">
+        <div className="text-xs text-slate-500 font-semibold sf-caption px-2 shrink-0">
           Showing {filteredGroups.length} of {groups.length} batch(es)
         </div>
       </div>

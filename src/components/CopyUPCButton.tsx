@@ -67,10 +67,10 @@ export const CopyUPCButton: React.FC<CopyUPCButtonProps> = ({
       type="button"
       onClick={handleCopy}
       title={copied ? 'Copied to clipboard!' : `Click to copy UPC: ${cleanUpc}`}
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-xs font-medium transition-all duration-150 cursor-pointer select-none group border ${
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-xs font-medium transition-all cursor-pointer select-none group border apple-pressable ${
         copied
           ? 'bg-emerald-50 text-emerald-700 border-emerald-300 ring-1 ring-emerald-400/40'
-          : 'bg-slate-100 hover:bg-slate-200/80 text-slate-800 border-slate-200 hover:border-slate-300'
+          : 'bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] border-black/[0.06]'
       } ${className}`}
     >
       {showIcon && !copied && (

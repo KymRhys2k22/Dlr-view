@@ -13,8 +13,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onReset,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-      <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mb-4 shadow-2xs">
+    <div className="flex flex-col items-center justify-center p-12 sm:p-16 text-center apple-card rounded-3xl border border-black/[0.06]">
+      <div className="w-16 h-16 rounded-2xl bg-black/[0.03] border border-black/[0.06] flex items-center justify-center text-slate-400 mb-4 shadow-2xs">
         {isSearchActive ? (
           <SearchX className="w-8 h-8 text-slate-400" />
         ) : (
@@ -22,11 +22,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         )}
       </div>
 
-      <h3 className="text-base sm:text-lg font-bold text-slate-800 mb-1">
+      <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] mb-1 sf-headline">
         {isSearchActive ? 'No matching records found' : 'No Damage & Lost Reports found'}
       </h3>
 
-      <p className="text-xs sm:text-sm text-slate-500 max-w-sm mb-6">
+      <p className="text-xs sm:text-sm text-slate-500 max-w-sm mb-6 sf-subheadline leading-relaxed">
         {isSearchActive
           ? 'No DLR items match your search keywords under the current department.'
           : `There are currently no damage or lost reports filed under "${selectedDepartment}".`}
@@ -35,7 +35,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <button
         type="button"
         onClick={onReset}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold transition-colors border border-slate-200"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/[0.05] hover:bg-black/[0.08] text-slate-700 hover:text-[#1D1D1F] text-xs sm:text-sm font-semibold transition-all border border-black/[0.06] cursor-pointer apple-pressable sf-subheadline"
       >
         <RotateCcw className="w-4 h-4 text-slate-500" />
         <span>Reset Filters & Search</span>
