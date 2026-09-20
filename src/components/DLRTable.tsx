@@ -4,7 +4,7 @@ import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
 import { CopySKUButton } from './CopySKUButton';
 import { CopyUPCButton } from './CopyUPCButton';
-import { AlertCircle, Layers, Trash2, Sparkles } from 'lucide-react';
+import { AlertCircle, Layers, Trash2, Sparkles, Pencil } from 'lucide-react';
 
 interface DLRTableProps {
   records: DLRRecord[];
@@ -15,6 +15,7 @@ interface DLRTableProps {
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
+  onEditRecord?: (record: DLRRecord) => void;
   newlyAddedIds?: Set<string>;
   isSelectable?: boolean;
   selectedRecordIds?: Set<string>;
@@ -27,6 +28,7 @@ export const DLRTable: React.FC<DLRTableProps> = ({
   onOpenModal,
   onToast,
   onDeleteRecord,
+  onEditRecord,
   newlyAddedIds,
   isSelectable = false,
   selectedRecordIds = new Set(),
@@ -69,7 +71,7 @@ export const DLRTable: React.FC<DLRTableProps> = ({
               <th className="py-3.5 px-3 text-right">Cost / Price</th>
               <th className="py-3.5 px-3 text-right">Total Loss</th>
               <th className="py-3.5 px-4">Evidence Photos (Qty / Dmg / Barcode)</th>
-              {onDeleteRecord && <th className="py-3.5 px-3 text-center">Action</th>}
+              {(onDeleteRecord || onEditRecord) && <th className="py-3.5 px-3 text-center">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-black/[0.04] text-xs">
@@ -200,17 +202,31 @@ export const DLRTable: React.FC<DLRTableProps> = ({
                     />
                   </td>
 
-                  {/* Delete Action Button */}
-                  {onDeleteRecord && (
-                    <td className="py-4 px-3 align-middle text-center">
-                      <button
-                        type="button"
-                        onClick={() => onDeleteRecord(record)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-200/80 apple-pressable cursor-pointer"
-                        title={`Delete report for SKU ${record.sku}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  {/* Actions Column (Edit & Delete) */}
+                  {(onDeleteRecord || onEditRecord) && (
+                    <td className="py-4 px-3 align-middle text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1">
+                        {onEditRecord && (
+                          <button
+                            type="button"
+                            onClick={() => onEditRecord(record)}
+                            className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-200/80 apple-pressable cursor-pointer"
+                            title={`Edit details for SKU ${record.sku}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDeleteRecord && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteRecord(record)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-200/80 apple-pressable cursor-pointer"
+                            title={`Delete report for SKU ${record.sku}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>

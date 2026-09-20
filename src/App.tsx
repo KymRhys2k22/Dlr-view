@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { UserSession, DLRRecord, SummaryStats } from './types/dlr';
-import { DepartmentName } from './utils/getDepartmentName';
+import { DepartmentName, getDepartmentName } from './utils/getDepartmentName';
 import {
   fetchDLRRecordsFromSupabase,
   deleteDLRRecordFromSupabase,
@@ -8,6 +8,7 @@ import {
   updateDLRNumberInSupabase,
   unfileDLRRecordInSupabase,
   updateDLRStatusInSupabase,
+  updateDLRItemDetailsInSupabase,
 } from './services/dlrService';
 import { deleteCloudinaryImages } from './services/cloudinaryService';
 import { LoginForm } from './components/LoginForm';
@@ -24,6 +25,7 @@ import { EmptyState } from './components/EmptyState';
 import { ErrorState } from './components/ErrorState';
 import { ImageModal } from './components/ImageModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
+import { EditItemModal } from './components/EditItemModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { RealtimeEventItem } from './components/NotificationCenter';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
@@ -67,6 +69,9 @@ export const App: React.FC = () => {
   // Delete state
   const [recordToDelete, setRecordToDelete] = useState<DLRRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Edit item details modal state
+  const [itemToEdit, setItemToEdit] = useState<DLRRecord | null>(null);
 
   // Filters state: Single-select department chip
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentName>('All Departments');
@@ -624,6 +629,30 @@ export const App: React.FC = () => {
     );
   };
 
+  // Save updated item details (Department, SubDep, Quantity) to Supabase
+  const handleSaveItemDetails = async (
+    recordId: string,
+    updates: { department: string; subDep: string | null; qty: number }
+  ) => {
+    await updateDLRItemDetailsInSupabase(recordId, updates);
+
+    const newDeptName = getDepartmentName(updates.department);
+
+    setRecords((prev) =>
+      prev.map((r) =>
+        r.id === recordId
+          ? {
+              ...r,
+              departmentCode: updates.department,
+              departmentName: newDeptName,
+              subDep: updates.subDep,
+              qty: updates.qty,
+            }
+          : r
+      )
+    );
+  };
+
   // Selected records list for Assign Modal preview
   const selectedRecordsList = useMemo(() => {
     return filteredActiveRecords.filter((r) => selectedRecordIds.has(r.id));
@@ -885,6 +914,7 @@ export const App: React.FC = () => {
                           onOpenModal={handleOpenImageModal}
                           onToast={addToast}
                           onDeleteRecord={(rec) => setRecordToDelete(rec)}
+                          onEditRecord={(rec) => setItemToEdit(rec)}
                           newlyAddedIds={newlyAddedIds}
                           isSelectable={isDepartmentFilterActive}
                           selectedRecordIds={selectedRecordIds}
@@ -907,6 +937,7 @@ export const App: React.FC = () => {
                           onOpenModal={handleOpenImageModal}
                           onToast={addToast}
                           onDeleteRecord={(rec) => setRecordToDelete(rec)}
+                          onEditRecord={(rec) => setItemToEdit(rec)}
                           newlyAddedIds={newlyAddedIds}
                           isSelectable={isDepartmentFilterActive}
                           isSelected={selectedRecordIds.has(record.id)}
@@ -975,6 +1006,15 @@ export const App: React.FC = () => {
         onClose={() => !isDeleting && setRecordToDelete(null)}
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
+      />
+
+      {/* Edit Item Details Modal (Department, Sub Department, Quantity) */}
+      <EditItemModal
+        isOpen={Boolean(itemToEdit)}
+        record={itemToEdit}
+        onClose={() => setItemToEdit(null)}
+        onSave={handleSaveItemDetails}
+        onToast={addToast}
       />
 
       {/* Assign DLR Number Modal */}

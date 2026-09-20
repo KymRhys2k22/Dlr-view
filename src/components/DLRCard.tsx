@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, Barcode, AlertCircle, Coins, Layers, Trash2, Sparkles } from 'lucide-react';
+import { Tag, Barcode, AlertCircle, Coins, Layers, Trash2, Sparkles, Pencil } from 'lucide-react';
 import { DLRRecord } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
@@ -15,6 +15,7 @@ interface DLRCardProps {
   ) => void;
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onDeleteRecord?: (record: DLRRecord) => void;
+  onEditRecord?: (record: DLRRecord) => void;
   newlyAddedIds?: Set<string>;
   isSelectable?: boolean;
   isSelected?: boolean;
@@ -26,6 +27,7 @@ export const DLRCard: React.FC<DLRCardProps> = ({
   onOpenModal,
   onToast,
   onDeleteRecord,
+  onEditRecord,
   newlyAddedIds,
   isSelectable = false,
   isSelected = false,
@@ -112,20 +114,35 @@ export const DLRCard: React.FC<DLRCardProps> = ({
             </span>
           </div>
 
-          {/* Delete Action button */}
-          {onDeleteRecord && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteRecord(record);
-              }}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors apple-pressable cursor-pointer"
-              title="Delete record"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          {/* Action buttons (Edit & Delete) */}
+          <div className="flex items-center gap-1">
+            {onEditRecord && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditRecord(record);
+                }}
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors apple-pressable cursor-pointer"
+                title="Edit item details"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+            {onDeleteRecord && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteRecord(record);
+                }}
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors apple-pressable cursor-pointer"
+                title="Delete record"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

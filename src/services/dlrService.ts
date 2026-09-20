@@ -350,3 +350,38 @@ export async function unfileDLRRecordInSupabase(
   }
 }
 
+/**
+ * Update Department, SubDep, and Qty for a single DLR record in Supabase
+ */
+export async function updateDLRItemDetailsInSupabase(
+  recordId: string,
+  updates: {
+    department: string;
+    subDep: string | null;
+    qty: number;
+  }
+): Promise<void> {
+  const payload = {
+    Department: updates.department,
+    SubDep: updates.subDep,
+    Qty: updates.qty,
+  };
+
+  let { error } = await supabase
+    .from('dlr_records')
+    .update(payload)
+    .eq('id', recordId);
+
+  if (error && (error.code === 'PGRST205' || error.message.includes('not find the table') || error.code === '42P01')) {
+    const fallback = await supabase
+      .from('dlr_unsigned')
+      .update(payload)
+      .eq('id', recordId);
+    error = fallback.error;
+  }
+
+  if (error) {
+    console.error('Supabase update item details error:', error.message);
+    throw new Error(error.message || 'Failed to update item details in database');
+  }
+}
