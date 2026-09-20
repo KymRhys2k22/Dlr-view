@@ -20,6 +20,7 @@ import { SearchBar } from './components/SearchBar';
 import { ExportExcelButton } from './components/ExportExcelButton';
 import { DLRTable } from './components/DLRTable';
 import { DLRCard } from './components/DLRCard';
+import { Pagination } from './components/Pagination';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { EmptyState } from './components/EmptyState';
 import { ErrorState } from './components/ErrorState';
@@ -83,6 +84,10 @@ export const App: React.FC = () => {
 
   // UI preferences
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
+  // Active Audit Pagination state (6 items per page)
+  const ACTIVE_ITEMS_PER_PAGE = 6;
+  const [activeAuditPage, setActiveAuditPage] = useState<number>(1);
 
   // Modal Lightbox state
   const [modalImage, setModalImage] = useState<{
@@ -370,6 +375,7 @@ export const App: React.FC = () => {
     setSelectedDepartment('All Departments');
     setSelectedRecordIds(new Set());
     setSearchQuery('');
+    setActiveAuditPage(1);
     addToast('Logged out successfully.', 'info');
   };
 
@@ -513,6 +519,29 @@ export const App: React.FC = () => {
       return true;
     });
   }, [activeRecords, isDepartmentFilterActive, selectedDepartment, searchQuery]);
+
+  // Reset pagination to page 1 whenever department or search filter changes
+  useEffect(() => {
+    setActiveAuditPage(1);
+  }, [selectedDepartment, searchQuery]);
+
+  // Total pages for Active Audit (7 items per page)
+  const totalActivePages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredActiveRecords.length / ACTIVE_ITEMS_PER_PAGE));
+  }, [filteredActiveRecords.length, ACTIVE_ITEMS_PER_PAGE]);
+
+  // Ensure activeAuditPage stays within valid bounds
+  useEffect(() => {
+    if (activeAuditPage > totalActivePages) {
+      setActiveAuditPage(totalActivePages);
+    }
+  }, [activeAuditPage, totalActivePages]);
+
+  // Paginated records for Active Audit (7 items per page)
+  const paginatedActiveRecords = useMemo(() => {
+    const startIndex = (activeAuditPage - 1) * ACTIVE_ITEMS_PER_PAGE;
+    return filteredActiveRecords.slice(startIndex, startIndex + ACTIVE_ITEMS_PER_PAGE);
+  }, [filteredActiveRecords, activeAuditPage, ACTIVE_ITEMS_PER_PAGE]);
 
   // Recalculated Summary Stats for Active Records
   const summaryStats = useMemo<SummaryStats>(() => {
@@ -848,7 +877,7 @@ export const App: React.FC = () => {
                 )}
 
                 {/* Controls Bar: Search, View Mode Toggle, Excel Export */}
-                <div className="apple-card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div id="active-records-container" className="apple-card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   {/* Search Bar */}
                   <SearchBar
                     value={searchQuery}
@@ -910,7 +939,8 @@ export const App: React.FC = () => {
                     {viewMode === 'table' ? (
                       <div className="hidden lg:block">
                         <DLRTable
-                          records={filteredActiveRecords}
+                          records={paginatedActiveRecords}
+                          startIndex={(activeAuditPage - 1) * ACTIVE_ITEMS_PER_PAGE}
                           onOpenModal={handleOpenImageModal}
                           onToast={addToast}
                           onDeleteRecord={(rec) => setRecordToDelete(rec)}
@@ -930,21 +960,42 @@ export const App: React.FC = () => {
                         viewMode === 'table' ? 'lg:hidden' : 'block'
                       } grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`}
                     >
-                      {filteredActiveRecords.map((record) => (
-                        <DLRCard
-                          key={record.id}
-                          record={record}
-                          onOpenModal={handleOpenImageModal}
-                          onToast={addToast}
-                          onDeleteRecord={(rec) => setRecordToDelete(rec)}
-                          onEditRecord={(rec) => setItemToEdit(rec)}
-                          newlyAddedIds={newlyAddedIds}
-                          isSelectable={isDepartmentFilterActive}
-                          isSelected={selectedRecordIds.has(record.id)}
-                          onToggleSelect={handleToggleSelectRecord}
-                        />
-                      ))}
+                      {paginatedActiveRecords.map((record, index) => {
+                        const itemNumber = (activeAuditPage - 1) * ACTIVE_ITEMS_PER_PAGE + index + 1;
+                        return (
+                          <DLRCard
+                            key={record.id}
+                            record={record}
+                            itemNumber={itemNumber}
+                            onOpenModal={handleOpenImageModal}
+                            onToast={addToast}
+                            onDeleteRecord={(rec) => setRecordToDelete(rec)}
+                            onEditRecord={(rec) => setItemToEdit(rec)}
+                            newlyAddedIds={newlyAddedIds}
+                            isSelectable={isDepartmentFilterActive}
+                            isSelected={selectedRecordIds.has(record.id)}
+                            onToggleSelect={handleToggleSelectRecord}
+                          />
+                        );
+                      })}
                     </div>
+
+                    {/* Active Audit Pagination Controls with Bullet Points 1, 2, 3 */}
+                    <Pagination
+                      currentPage={activeAuditPage}
+                      totalPages={totalActivePages}
+                      totalItems={filteredActiveRecords.length}
+                      itemsPerPage={ACTIVE_ITEMS_PER_PAGE}
+                      onPageChange={(page) => {
+                        setActiveAuditPage(page);
+                        const element = document.getElementById('active-records-container');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                          window.scrollTo({ top: 380, behavior: 'smooth' });
+                        }
+                      }}
+                    />
                   </>
                 )}
               </div>

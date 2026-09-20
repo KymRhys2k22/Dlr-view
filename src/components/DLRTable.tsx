@@ -8,6 +8,7 @@ import { AlertCircle, Layers, Trash2, Sparkles, Pencil } from 'lucide-react';
 
 interface DLRTableProps {
   records: DLRRecord[];
+  startIndex?: number;
   onOpenModal: (
     url: string,
     type: string,
@@ -25,6 +26,7 @@ interface DLRTableProps {
 
 export const DLRTable: React.FC<DLRTableProps> = ({
   records,
+  startIndex = 0,
   onOpenModal,
   onToast,
   onDeleteRecord,
@@ -64,6 +66,7 @@ export const DLRTable: React.FC<DLRTableProps> = ({
                   />
                 </th>
               )}
+              <th className="py-3.5 px-3 text-center w-12">#</th>
               <th className="py-3.5 px-4">Item Details</th>
               <th className="py-3.5 px-3">Department / SubDep</th>
               <th className="py-3.5 px-3">Defect Reason</th>
@@ -75,7 +78,8 @@ export const DLRTable: React.FC<DLRTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-black/[0.04] text-xs">
-            {records.map((record) => {
+            {records.map((record, index) => {
+              const itemNumber = startIndex + index + 1;
               const totalLoss = record.cost * record.qty;
               const deptBadge = deptColors[record.departmentName] || deptColors.Unknown;
               const isNew = newlyAddedIds?.has(record.id);
@@ -104,6 +108,12 @@ export const DLRTable: React.FC<DLRTableProps> = ({
                       />
                     </td>
                   )}
+                  {/* Item Number (#) */}
+                  <td className="py-4 px-3 text-center align-top">
+                    <span className="inline-flex items-center justify-center font-mono font-bold text-[11px] text-slate-500 bg-black/[0.04] px-1.5 py-0.5 rounded border border-black/[0.04]">
+                      {itemNumber}
+                    </span>
+                  </td>
                   {/* Item Details: SKU, Desc, UPC */}
                   <td className="py-4 px-4 align-top max-w-xs">
                     <div className="space-y-1">

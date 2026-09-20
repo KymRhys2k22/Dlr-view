@@ -8,6 +8,7 @@ import { CopyUPCButton } from './CopyUPCButton';
 
 interface DLRCardProps {
   record: DLRRecord;
+  itemNumber?: number;
   onOpenModal: (
     url: string,
     type: string,
@@ -24,6 +25,7 @@ interface DLRCardProps {
 
 export const DLRCard: React.FC<DLRCardProps> = ({
   record,
+  itemNumber,
   onOpenModal,
   onToast,
   onDeleteRecord,
@@ -64,6 +66,13 @@ export const DLRCard: React.FC<DLRCardProps> = ({
                 className="w-4 h-4 rounded-md text-rose-600 focus:ring-rose-500/30 border-slate-300 cursor-pointer mr-1 shrink-0 apple-pressable"
               />
             )}
+
+            {itemNumber !== undefined && (
+              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-slate-900 text-white text-[11px] font-mono font-bold shadow-xs sf-caption">
+                #{itemNumber}
+              </span>
+            )}
+
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-100 sf-caption">
               {record.departmentName}
             </span>
