@@ -102,10 +102,11 @@ export interface ExportPdfOptions {
   dlrNumber?: string;
   status?: string | null;
   isApproved?: boolean;
+  isDisposed?: boolean;
 }
 
 /**
- * Generate and download an Apple-styled PDF report for a Filed or Approved DLR batch
+ * Generate and download an Apple-styled PDF report for a Filed, Approved, or Disposed DLR batch
  */
 export async function exportFiledDLRToPdf(
   records: DLRRecord[],
@@ -117,10 +118,15 @@ export async function exportFiledDLRToPdf(
     .trim()
     .replace(/^#/, '');
 
+  const isDisposed =
+    options.isDisposed !== undefined
+      ? Boolean(options.isDisposed)
+      : options.status === 'disposed' || (records.length > 0 && records.every((r) => r.status === 'disposed'));
+
   const isApproved =
     options.isApproved !== undefined
       ? Boolean(options.isApproved)
-      : options.status === 'approved' || records.every((r) => r.status === 'approved');
+      : options.status === 'approved' || (records.length > 0 && records.every((r) => r.status === 'approved'));
 
   // Calculate totals
   const totalItems = records.length;
@@ -173,8 +179,11 @@ export async function exportFiledDLRToPdf(
   const badgeX = pageWidth - margin - badgeWidth - 5;
   const badgeY = headerY + (headerHeight - badgeHeight) / 2;
 
-  // Draw Badge Box based on approval status
-  if (isApproved) {
+  // Draw Badge Box based on approval/disposed status
+  if (isDisposed) {
+    doc.setFillColor(241, 245, 249); // Slate-100
+    doc.setDrawColor(203, 213, 225); // Slate-300
+  } else if (isApproved) {
     doc.setFillColor(236, 253, 245); // Emerald-50
     doc.setDrawColor(167, 243, 208); // Emerald-200
   } else {
@@ -185,7 +194,12 @@ export async function exportFiledDLRToPdf(
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
-  if (isApproved) {
+  if (isDisposed) {
+    doc.setTextColor(71, 85, 105); // Slate-600
+    doc.text('DISPOSED DLR', badgeX + badgeWidth / 2, badgeY + 6, { align: 'center' });
+    doc.setFontSize(10.5);
+    doc.setTextColor(30, 41, 59); // Slate-800
+  } else if (isApproved) {
     doc.setTextColor(5, 150, 105); // Emerald-600
     doc.text('APPROVED DLR', badgeX + badgeWidth / 2, badgeY + 6, { align: 'center' });
     doc.setFontSize(10.5);
@@ -204,7 +218,11 @@ export async function exportFiledDLRToPdf(
   doc.setFontSize(15);
   doc.setTextColor(29, 29, 31); // Apple dark text (#1D1D1F)
   doc.text(
-    isApproved ? 'APPROVED DLR AUDIT REPORT' : 'FILED DLR AUDIT REPORT',
+    isDisposed
+      ? 'DISPOSED DLR AUDIT REPORT'
+      : isApproved
+      ? 'APPROVED DLR AUDIT REPORT'
+      : 'FILED DLR AUDIT REPORT',
     margin + 6,
     headerY + 10
   );
@@ -219,7 +237,13 @@ export async function exportFiledDLRToPdf(
     { maxWidth: maxTitleWidth }
   );
   doc.text(
-    `Status: ${isApproved ? 'Verified & Approved Audit Batch' : 'Filed & Pending Review'}  |  ${totalItems} Total Records`,
+    `Status: ${
+      isDisposed
+        ? 'Disposed & Finalized Audit Batch'
+        : isApproved
+        ? 'Verified & Approved Audit Batch'
+        : 'Filed & Pending Review'
+    }  |  ${totalItems} Total Records`,
     margin + 6,
     headerY + 25,
     { maxWidth: maxTitleWidth }
@@ -417,7 +441,7 @@ export async function exportFiledDLRToPdf(
   // Trigger Download
   const fileDate = new Date().toISOString().split('T')[0];
   const safeDlr = cleanDlr.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const prefix = isApproved ? 'Approved' : 'Filed';
+  const prefix = isDisposed ? 'Disposed' : isApproved ? 'Approved' : 'Filed';
   const filename = options.filenameOverride || `DLR_${prefix}_${safeDlr}_${fileDate}.pdf`;
 
   doc.save(filename);

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, ChevronRight, Package, Calendar, Pencil, Check, Clock, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, ChevronRight, Package, Calendar, Pencil, Check, Clock, FileSpreadsheet, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { FiledDLRGroup } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { exportFiledDLRBatchToExcel } from '../utils/exportExcel';
@@ -10,6 +10,7 @@ interface FiledDLRCardProps {
   onClick: (group: FiledDLRGroup) => void;
   onEditDlr?: (group: FiledDLRGroup) => void;
   onToggleApproved?: (recordIds: string[], currentStatus: string | null) => void;
+  onToggleDisposed?: (recordIds: string[], currentStatus: string | null) => void;
   onToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
   storeCode?: string;
 }
@@ -19,10 +20,12 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
   onClick,
   onEditDlr,
   onToggleApproved,
+  onToggleDisposed,
   onToast,
   storeCode,
 }) => {
   const isApproved = group.status === 'approved';
+  const isDisposed = group.status === 'disposed';
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const handleDownloadPdf = async (e: React.MouseEvent) => {
@@ -36,6 +39,7 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
       await exportFiledDLRToPdf(group.records, group.dlrNumber, storeCode, {
         status: group.status,
         isApproved,
+        isDisposed,
       });
       if (onToast) {
         onToast(`Downloaded PDF for DLR #${group.dlrNumber}!`, 'success');
@@ -53,7 +57,7 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
   const handleDownloadExcel = (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      exportFiledDLRBatchToExcel(group.records, group.dlrNumber, storeCode, isApproved);
+      exportFiledDLRBatchToExcel(group.records, group.dlrNumber, storeCode, isApproved, isDisposed);
       if (onToast) {
         onToast(`Downloaded Excel for DLR #${group.dlrNumber}!`, 'success');
       }
@@ -86,7 +90,9 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
     <div
       onClick={() => onClick(group)}
       className={`apple-card p-5 sm:p-6 space-y-4 cursor-pointer group relative overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
-        isApproved
+        isDisposed
+          ? 'border-slate-400/30 bg-gradient-to-b from-slate-500/[0.03] to-white shadow-slate-500/5'
+          : isApproved
           ? 'border-emerald-500/25 bg-gradient-to-b from-emerald-500/[0.02] to-white shadow-emerald-500/5'
           : 'border-black/[0.06] hover:border-black/[0.12]'
       }`}
@@ -94,7 +100,9 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
       {/* Top Specular Accent */}
       <div
         className={`absolute top-0 left-0 right-0 h-1 transition-all ${
-          isApproved
+          isDisposed
+            ? 'bg-gradient-to-r from-slate-600 to-slate-800'
+            : isApproved
             ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
             : 'bg-gradient-to-r from-rose-500 to-rose-600'
         }`}
@@ -124,8 +132,13 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
               </button>
             )}
 
-            {/* Approval Status Pill */}
-            {isApproved ? (
+            {/* Approval / Disposed Status Pill */}
+            {isDisposed ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-700 bg-slate-100 border border-slate-300/80 shadow-2xs sf-caption">
+                <Trash2 className="w-3 h-3 text-slate-600" />
+                <span>Disposed</span>
+              </span>
+            ) : isApproved ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 shadow-2xs sf-caption">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>Approved</span>
@@ -176,7 +189,7 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
 
         {/* Right side: Interactive Approval Switch & Open Chevron */}
         <div className="flex items-center gap-2 shrink-0">
-          {onToggleApproved && (
+          {!isDisposed && onToggleApproved && (
             <div
               className="flex items-center gap-1.5 bg-black/[0.03] px-2 py-1 rounded-full border border-black/[0.04]"
               title={isApproved ? 'Click to mark as pending' : 'Click to approve this batch'}
@@ -303,6 +316,40 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Excel</span>
           </button>
+          {isApproved && onToggleDisposed && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleDisposed(
+                  group.records.map((r) => r.id),
+                  group.status
+                );
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-300/90 shadow-2xs transition-all cursor-pointer apple-pressable sf-subheadline"
+              title={`Add DLR #${group.dlrNumber} to Disposed tab`}
+            >
+              <Trash2 className="w-3.5 h-3.5 text-slate-600" />
+              <span>Add to Disposed</span>
+            </button>
+          )}
+          {isDisposed && onToggleDisposed && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleDisposed(
+                  group.records.map((r) => r.id),
+                  group.status
+                );
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200/90 shadow-2xs transition-all cursor-pointer apple-pressable sf-subheadline"
+              title={`Restore DLR #${group.dlrNumber} back to Approved tab`}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Restore to Approved</span>
+            </button>
+          )}
         </div>
         <span className="text-[11px] text-slate-400 font-normal sf-caption">
           {group.records.length} records in batch
@@ -311,4 +358,5 @@ export const FiledDLRCard: React.FC<FiledDLRCardProps> = ({
     </div>
   );
 };
+
 

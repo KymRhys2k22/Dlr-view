@@ -6,6 +6,7 @@ export interface ExportExcelOptions {
   includeImages?: boolean;
   filenameOverride?: string;
   isApproved?: boolean;
+  isDisposed?: boolean;
   isFiled?: boolean;
   dlrNumber?: string;
 }
@@ -17,10 +18,11 @@ export function exportDLRToExcel(
   options: ExportExcelOptions = {}
 ): void {
   const isApproved = Boolean(options.isApproved);
+  const isDisposed = Boolean(options.isDisposed);
   const isFiled = Boolean(options.isFiled);
-  const isBatchExport = isApproved || isFiled || Boolean(options.dlrNumber);
+  const isBatchExport = isApproved || isDisposed || isFiled || Boolean(options.dlrNumber);
 
-  // In Filed / Approved batch export:
+  // In Filed / Approved / Disposed batch export:
   // - Put DLR number into A1 row at the top of the Excel sheet
   // - Put Department into B1 row at the top of the Excel sheet
   // - Do NOT include DLR Number or Department in the table columns
@@ -42,6 +44,7 @@ export function exportDLRToExcel(
         ? deptList.join(', ')
         : selectedDepartment &&
           !selectedDepartment.startsWith('Approved_') &&
+          !selectedDepartment.startsWith('Disposed_') &&
           !selectedDepartment.startsWith('Filed_')
         ? selectedDepartment
         : 'All Departments';
@@ -81,7 +84,7 @@ export function exportDLRToExcel(
     XLSX.utils.book_append_sheet(workbook, worksheet, 'DLR Reports');
 
     const today = new Date().toISOString().split('T')[0];
-    const prefix = isApproved ? 'Approved' : 'Filed';
+    const prefix = isDisposed ? 'Disposed' : isApproved ? 'Approved' : 'Filed';
     let filename = options.filenameOverride;
     if (!filename) {
       const safeDlr = cleanDlr.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -186,16 +189,18 @@ export function exportFiledDLRBatchToExcel(
   records: DLRRecord[],
   dlrNumber: string,
   storeCode?: string,
-  isApproved: boolean = false
+  isApproved: boolean = false,
+  isDisposed: boolean = false
 ): void {
-  const prefix = isApproved ? 'Approved' : 'Filed';
+  const prefix = isDisposed ? 'Disposed' : isApproved ? 'Approved' : 'Filed';
   const today = new Date().toISOString().split('T')[0];
   const safeDlr = String(dlrNumber || 'Batch').replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `DLR_${prefix}_${safeDlr}_${today}.xlsx`;
 
   exportDLRToExcel(records, `${prefix}_${safeDlr}`, storeCode, {
     isApproved,
-    isFiled: !isApproved,
+    isDisposed,
+    isFiled: !isApproved && !isDisposed,
     includeImages: false,
     dlrNumber,
     filenameOverride: filename,

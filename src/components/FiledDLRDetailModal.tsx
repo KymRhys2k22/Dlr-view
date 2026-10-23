@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileSpreadsheet, Layers, RotateCcw, Loader2, Pencil, Check, FileText } from 'lucide-react';
+import { X, FileSpreadsheet, Layers, RotateCcw, Loader2, Pencil, Check, FileText, Trash2 } from 'lucide-react';
 import { FiledDLRGroup } from '../types/dlr';
 import { formatCurrencyPHP } from '../utils/currency';
 import { DLRImagePreview } from './DLRImagePreview';
@@ -21,6 +21,7 @@ interface FiledDLRDetailModalProps {
   onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onUnfileRecord?: (recordId: string) => Promise<void>;
   onUpdateDLRNumber?: (recordIds: string[], newDlrNumber: string) => Promise<void>;
+  onToggleDisposed?: (recordIds: string[], currentStatus: string | null) => Promise<void>;
 }
 
 export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
@@ -32,6 +33,7 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
   onToast,
   onUnfileRecord,
   onUpdateDLRNumber,
+  onToggleDisposed,
 }) => {
   const [unfilingId, setUnfilingId] = useState<string | null>(null);
 
@@ -113,11 +115,13 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
   const handleExportExcel = () => {
     try {
       const isApproved = group.status === 'approved';
+      const isDisposed = group.status === 'disposed';
       const today = new Date().toISOString().split('T')[0];
-      const prefix = isApproved ? 'Approved' : 'Filed';
+      const prefix = isDisposed ? 'Disposed' : isApproved ? 'Approved' : 'Filed';
       exportDLRToExcel(group.records, `${prefix}_${group.dlrNumber}`, storeCode, {
         isApproved,
-        isFiled: !isApproved,
+        isDisposed,
+        isFiled: !isApproved && !isDisposed,
         includeImages: false,
         dlrNumber: group.dlrNumber,
         filenameOverride: `DLR_${prefix}_${group.dlrNumber}_${today}.xlsx`,
@@ -134,10 +138,12 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
     setIsGeneratingPdf(true);
     try {
       const isApproved = group.status === 'approved';
+      const isDisposed = group.status === 'disposed';
       onToast(`Building PDF report with item photos for DLR #${group.dlrNumber}...`, 'info');
       await exportFiledDLRToPdf(group.records, group.dlrNumber, storeCode, {
         status: group.status,
         isApproved,
+        isDisposed,
       });
       onToast(`Downloaded PDF report for DLR #${group.dlrNumber}!`, 'success');
     } catch (err) {
@@ -238,7 +244,11 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
             )}
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] leading-tight sf-headline">
-                {group.status === 'approved' ? 'Approved DLR Report' : 'Filed DLR Report'}
+                {group.status === 'disposed'
+                  ? 'Disposed DLR Report'
+                  : group.status === 'approved'
+                  ? 'Approved DLR Report'
+                  : 'Filed DLR Report'}
               </h3>
               <p className="text-xs text-slate-500 sf-subheadline">
                 {group.totalRecords} record(s) · {group.totalQuantity} total pcs · {formatCurrencyPHP(group.totalCost)} total loss
@@ -247,6 +257,40 @@ export const FiledDLRDetailModal: React.FC<FiledDLRDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {group.status === 'approved' && onToggleDisposed && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await onToggleDisposed(
+                    group.records.map((r) => r.id),
+                    group.status
+                  );
+                  onClose();
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white shadow-xs transition-colors cursor-pointer apple-pressable sf-subheadline"
+                title="Add this batch to Disposed tab"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Add to Disposed</span>
+              </button>
+            )}
+            {group.status === 'disposed' && onToggleDisposed && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await onToggleDisposed(
+                    group.records.map((r) => r.id),
+                    group.status
+                  );
+                  onClose();
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer apple-pressable sf-subheadline"
+                title="Restore this batch to Approved tab"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="hidden sm:inline">Restore to Approved</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleExportPdf}

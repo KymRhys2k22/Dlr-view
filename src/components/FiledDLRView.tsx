@@ -10,7 +10,7 @@ import { EditDLRModal } from './EditDLRModal';
 interface FiledDLRViewProps {
   records: DLRRecord[];
   storeCode: string;
-  mode?: 'filed' | 'approved';
+  mode?: 'filed' | 'approved' | 'disposed';
   onOpenImageModal: (
     url: string,
     type: string,
@@ -20,6 +20,7 @@ interface FiledDLRViewProps {
   onUnfileRecord?: (recordId: string) => Promise<void>;
   onUpdateDLRNumber?: (recordIds: string[], newDlrNumber: string) => Promise<void>;
   onToggleApproved?: (recordIds: string[], currentStatus: string | null) => Promise<void>;
+  onToggleDisposed?: (recordIds: string[], currentStatus: string | null) => Promise<void>;
 }
 
 export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
@@ -31,12 +32,14 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
   onUnfileRecord,
   onUpdateDLRNumber,
   onToggleApproved,
+  onToggleDisposed,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<FiledDLRGroup | null>(null);
   const [groupToEdit, setGroupToEdit] = useState<FiledDLRGroup | null>(null);
 
   const isApprovedMode = mode === 'approved';
+  const isDisposedMode = mode === 'disposed';
 
   // Group filed records by dlrNumber
   const groups = useMemo<FiledDLRGroup[]>(() => {
@@ -123,6 +126,23 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     });
   };
 
+  const handleToggleDisposed = async (recordIds: string[], currentStatus: string | null) => {
+    if (!onToggleDisposed) return;
+    await onToggleDisposed(recordIds, currentStatus);
+
+    setSelectedGroup((prev) => {
+      if (!prev) return null;
+      const newStatus = currentStatus === 'disposed' ? 'approved' : 'disposed';
+      return {
+        ...prev,
+        status: newStatus,
+        records: prev.records.map((r) =>
+          recordIds.includes(r.id) ? { ...r, status: newStatus } : r
+        ),
+      };
+    });
+  };
+
   const handleUpdateDlr = async (recordIds: string[], newDlrNumber: string) => {
     if (!onUpdateDLRNumber) return;
     await onUpdateDLRNumber(recordIds, newDlrNumber);
@@ -162,7 +182,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
   const handleExportAllBatches = () => {
     try {
       const recordsToExport = filteredGroups.flatMap((g) => g.records);
-      const modeLabel = isApprovedMode ? 'approved' : 'filed';
+      const modeLabel = isDisposedMode ? 'disposed' : isApprovedMode ? 'approved' : 'filed';
       if (recordsToExport.length === 0) {
         onToast(`No ${modeLabel} records to export`, 'info');
         return;
@@ -171,17 +191,18 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
       const uniqueDlrs = Array.from(
         new Set(filteredGroups.map((g) => g.dlrNumber).filter(Boolean))
       ).join(', ');
-      const prefix = isApprovedMode ? 'Approved' : 'Filed';
+      const prefix = isDisposedMode ? 'Disposed' : isApprovedMode ? 'Approved' : 'Filed';
       exportDLRToExcel(recordsToExport, `All_${prefix}`, storeCode, {
         isApproved: isApprovedMode,
-        isFiled: !isApprovedMode,
+        isDisposed: isDisposedMode,
+        isFiled: !isApprovedMode && !isDisposedMode,
         includeImages: false,
         dlrNumber: uniqueDlrs || `All ${prefix}`,
         filenameOverride: `DLR_All_${prefix}_${today}.xlsx`,
       });
       onToast(`Exported ${recordsToExport.length} ${modeLabel} records to Excel!`, 'success');
     } catch (err) {
-      console.error(`Failed to export all ${isApprovedMode ? 'approved' : 'filed'} records:`, err);
+      console.error(`Failed to export all ${isDisposedMode ? 'disposed' : isApprovedMode ? 'approved' : 'filed'} records:`, err);
       onToast('Failed to export Excel file', 'error');
     }
   };
@@ -192,19 +213,39 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="apple-card p-4 sm:p-5">
           <div className="text-[11px] font-semibold text-slate-400 sf-caption">
-            {isApprovedMode ? 'Approved DLR Cards' : 'Filed DLR Cards'}
+            {isDisposedMode
+              ? 'Disposed DLR Cards'
+              : isApprovedMode
+              ? 'Approved DLR Cards'
+              : 'Filed DLR Cards'}
           </div>
-          <div className={`text-xl sm:text-2xl font-bold sf-display mt-1 ${isApprovedMode ? 'text-emerald-700' : 'text-[#1D1D1F]'}`}>
+          <div
+            className={`text-xl sm:text-2xl font-bold sf-display mt-1 ${
+              isDisposedMode
+                ? 'text-slate-800'
+                : isApprovedMode
+                ? 'text-emerald-700'
+                : 'text-[#1D1D1F]'
+            }`}
+          >
             {overallStats.totalFiles}
           </div>
           <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">
-            {isApprovedMode ? 'Cards verified' : 'Cards awaiting approval'}
+            {isDisposedMode
+              ? 'Cards disposed'
+              : isApprovedMode
+              ? 'Cards verified'
+              : 'Cards awaiting approval'}
           </div>
         </div>
 
         <div className="apple-card p-4 sm:p-5">
           <div className="text-[11px] font-semibold text-slate-400 sf-caption">
-            {isApprovedMode ? 'Total Approved Items' : 'Total Filed Items'}
+            {isDisposedMode
+              ? 'Total Disposed Items'
+              : isApprovedMode
+              ? 'Total Approved Items'
+              : 'Total Filed Items'}
           </div>
           <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
             {overallStats.totalItems}
@@ -214,7 +255,11 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
 
         <div className="apple-card p-4 sm:p-5">
           <div className="text-[11px] font-semibold text-slate-400 sf-caption">
-            {isApprovedMode ? 'Total Approved Units' : 'Total Filed Units'}
+            {isDisposedMode
+              ? 'Total Disposed Units'
+              : isApprovedMode
+              ? 'Total Approved Units'
+              : 'Total Filed Units'}
           </div>
           <div className="text-xl sm:text-2xl font-bold text-[#1D1D1F] sf-display mt-1">
             {overallStats.totalQty} <span className="text-sm font-normal text-slate-400">pcs</span>
@@ -223,10 +268,30 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
         </div>
 
         <div className="apple-card p-4 sm:p-5">
-          <div className={`text-[11px] font-semibold sf-caption ${isApprovedMode ? 'text-emerald-700' : 'text-rose-600/90'}`}>
-            {isApprovedMode ? 'Total Approved Loss' : 'Total Filed Loss'}
+          <div
+            className={`text-[11px] font-semibold sf-caption ${
+              isDisposedMode
+                ? 'text-slate-700'
+                : isApprovedMode
+                ? 'text-emerald-700'
+                : 'text-rose-600/90'
+            }`}
+          >
+            {isDisposedMode
+              ? 'Total Disposed Loss'
+              : isApprovedMode
+              ? 'Total Approved Loss'
+              : 'Total Filed Loss'}
           </div>
-          <div className={`text-xl sm:text-2xl font-bold sf-display mt-1 ${isApprovedMode ? 'text-emerald-600' : 'text-rose-600'}`}>
+          <div
+            className={`text-xl sm:text-2xl font-bold sf-display mt-1 ${
+              isDisposedMode
+                ? 'text-slate-800'
+                : isApprovedMode
+                ? 'text-emerald-600'
+                : 'text-rose-600'
+            }`}
+          >
             {formatCurrencyPHP(overallStats.totalLoss)}
           </div>
           <div className="text-[11px] text-slate-400 mt-0.5 sf-subheadline">Audited cost sum</div>
@@ -241,7 +306,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${isApprovedMode ? 'approved' : 'filed'} batches by DLR, SKU, description...`}
+            placeholder={`Search ${isDisposedMode ? 'disposed' : isApprovedMode ? 'approved' : 'filed'} batches by DLR, SKU, description...`}
             className="w-full pl-9.5 pr-4 py-2 text-xs sm:text-sm bg-black/[0.03] focus:bg-white border border-black/[0.06] focus:border-black/[0.2] rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all text-[#1D1D1F] placeholder:text-slate-400 sf-subheadline"
           />
         </div>
@@ -263,13 +328,23 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
               type="button"
               onClick={handleExportAllBatches}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer apple-pressable sf-subheadline shadow-2xs shrink-0 ${
-                isApprovedMode
+                isDisposedMode
+                  ? 'text-slate-800 bg-slate-100 hover:bg-slate-200/90 border border-slate-300/80'
+                  : isApprovedMode
                   ? 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/80'
                   : 'text-rose-800 bg-rose-50 hover:bg-rose-100/90 border border-rose-200/80'
               }`}
-              title={`Export all visible ${isApprovedMode ? 'approved' : 'filed'} cards to a single Excel file (without image links)`}
+              title={`Export all visible ${isDisposedMode ? 'disposed' : isApprovedMode ? 'approved' : 'filed'} cards to a single Excel file (without image links)`}
             >
-              <FileSpreadsheet className={`w-3.5 h-3.5 ${isApprovedMode ? 'text-emerald-600' : 'text-rose-600'}`} />
+              <FileSpreadsheet
+                className={`w-3.5 h-3.5 ${
+                  isDisposedMode
+                    ? 'text-slate-700'
+                    : isApprovedMode
+                    ? 'text-emerald-600'
+                    : 'text-rose-600'
+                }`}
+              />
               <span>Export All ({filteredGroups.length})</span>
             </button>
           )}
@@ -283,7 +358,11 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
             <FolderCheck className="w-7 h-7" />
           </div>
           <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] sf-headline">
-            {isApprovedMode
+            {isDisposedMode
+              ? groups.length === 0
+                ? 'No Disposed DLR Cards Yet'
+                : 'No Matching Disposed Cards'
+              : isApprovedMode
               ? groups.length === 0
                 ? 'No Approved DLR Cards Yet'
                 : 'No Matching Approved Cards'
@@ -292,7 +371,11 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
               : 'No Matching Filed Cards'}
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto sf-subheadline leading-relaxed">
-            {isApprovedMode
+            {isDisposedMode
+              ? groups.length === 0
+                ? 'You have not disposed of any approved batches yet. Open the Approved tab and click "Add to Disposed" on any approved card.'
+                : 'No disposed DLR cards match your search criteria. Try a different keyword.'
+              : isApprovedMode
               ? groups.length === 0
                 ? 'You have not approved any filed batches yet. Open the Filed DLRs tab and toggle the approval switch on any card.'
                 : 'No approved DLR cards match your search criteria. Try a different keyword.'
@@ -321,6 +404,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
               onClick={(g) => setSelectedGroup(g)}
               onEditDlr={(g) => setGroupToEdit(g)}
               onToggleApproved={onToggleApproved ? handleToggleApproved : undefined}
+              onToggleDisposed={onToggleDisposed ? handleToggleDisposed : undefined}
               onToast={onToast}
               storeCode={storeCode}
             />
@@ -337,6 +421,7 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
         onOpenImageModal={onOpenImageModal}
         onToast={onToast}
         onUpdateDLRNumber={onUpdateDLRNumber ? handleUpdateDlr : undefined}
+        onToggleDisposed={onToggleDisposed ? handleToggleDisposed : undefined}
         onUnfileRecord={async (recordId) => {
           if (onUnfileRecord) {
             await onUnfileRecord(recordId);
@@ -375,3 +460,4 @@ export const FiledDLRView: React.FC<FiledDLRViewProps> = ({
     </div>
   );
 };
+

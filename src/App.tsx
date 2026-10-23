@@ -35,7 +35,7 @@ import { AssignDLRModal } from './components/AssignDLRModal';
 import { FiledDLRView } from './components/FiledDLRView';
 import { playNotificationSound } from './utils/audio';
 import { sendBrowserNotification, updateAppBadge } from './utils/webNotification';
-import { LayoutGrid, Table as TableIcon, ClipboardList, Archive, CheckCircle2 } from 'lucide-react';
+import { LayoutGrid, Table as TableIcon, ClipboardList, Archive, CheckCircle2, Trash2 } from 'lucide-react';
 
 const SESSION_STORAGE_KEY = 'daiso_dlr_session_v1';
 
@@ -52,8 +52,8 @@ export const App: React.FC = () => {
     }
   });
 
-  // Top View Navigation: 'active' (Unfiled) vs 'filed' (Archived) vs 'approved' (Approved batches)
-  const [pageView, setPageView] = useState<'active' | 'filed' | 'approved'>('active');
+  // Top View Navigation: 'active' (Unfiled) vs 'filed' (Archived) vs 'approved' (Approved batches) vs 'disposed' (Disposed batches)
+  const [pageView, setPageView] = useState<'active' | 'filed' | 'approved' | 'disposed'>('active');
 
   // Data fetching state
   const [records, setRecords] = useState<DLRRecord[]>([]);
@@ -432,14 +432,21 @@ export const App: React.FC = () => {
     return records.filter((r) => !r.dlrNumber);
   }, [records]);
 
-  // Filed records: only those with a DLR number that are NOT approved
+  // Filed records: only those with a DLR number that are NOT approved and NOT disposed
   const filedRecords = useMemo(() => {
-    return records.filter((r) => Boolean(r.dlrNumber) && r.status !== 'approved');
+    return records.filter(
+      (r) => Boolean(r.dlrNumber) && r.status !== 'approved' && r.status !== 'disposed'
+    );
   }, [records]);
 
   // Approved records: only those with a DLR number that ARE approved
   const approvedRecords = useMemo(() => {
     return records.filter((r) => Boolean(r.dlrNumber) && r.status === 'approved');
+  }, [records]);
+
+  // Disposed records: only those with a DLR number that ARE disposed
+  const disposedRecords = useMemo(() => {
+    return records.filter((r) => Boolean(r.dlrNumber) && r.status === 'disposed');
   }, [records]);
 
   // Distinct batch card count to display in Filed DLRs tab
@@ -453,6 +460,12 @@ export const App: React.FC = () => {
     const uniqueDlrs = new Set(approvedRecords.map((r) => r.dlrNumber).filter(Boolean));
     return uniqueDlrs.size;
   }, [approvedRecords]);
+
+  // Distinct batch card count to display in Disposed tab
+  const disposedCardCount = useMemo(() => {
+    const uniqueDlrs = new Set(disposedRecords.map((r) => r.dlrNumber).filter(Boolean));
+    return uniqueDlrs.size;
+  }, [disposedRecords]);
 
   // Check if department filtering is active (a specific department chip is chosen)
   const isDepartmentFilterActive = useMemo(() => {
@@ -658,6 +671,27 @@ export const App: React.FC = () => {
     );
   };
 
+  // Toggle Disposed status for approved items
+  const handleToggleDisposed = async (recordIds: string[], currentStatus: string | null) => {
+    const newStatus = currentStatus === 'disposed' ? 'approved' : 'disposed';
+    if (!recordIds.length) return;
+
+    await updateDLRStatusInSupabase(recordIds, newStatus);
+
+    setRecords((prev) =>
+      prev.map((r) =>
+        recordIds.includes(r.id) ? { ...r, status: newStatus } : r
+      )
+    );
+
+    addToast(
+      newStatus === 'disposed'
+        ? `Added ${recordIds.length} item(s) to Disposed tab!`
+        : `Restored ${recordIds.length} item(s) back to Approved tab.`,
+      'success'
+    );
+  };
+
   // Save updated item details (Department, SubDep, Quantity) to Supabase
   const handleSaveItemDetails = async (
     recordId: string,
@@ -739,7 +773,7 @@ export const App: React.FC = () => {
         <Greeting session={session} />
 
         {/* View Switcher: Authentic Apple Segmented Control */}
-        <div className="inline-flex items-center p-1 bg-black/[0.06] rounded-2xl border border-black/[0.04] mb-6 w-full sm:w-auto">
+        <div className="inline-flex flex-wrap sm:flex-nowrap items-center p-1 bg-black/[0.06] rounded-2xl border border-black/[0.04] mb-6 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => {
@@ -812,6 +846,31 @@ export const App: React.FC = () => {
               }`}
             >
               {approvedCardCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPageView('disposed');
+              setSelectedRecordIds(new Set());
+            }}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer apple-pressable select-none ${
+              pageView === 'disposed'
+                ? 'bg-white text-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-slate-300/60'
+                : 'text-slate-600 hover:text-[#1D1D1F]'
+            }`}
+          >
+            <Trash2 className="w-4 h-4 text-slate-600" />
+            <span className="sf-subheadline">Disposed</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold sf-caption transition-colors ${
+                pageView === 'disposed'
+                  ? 'bg-slate-100 text-slate-800 font-bold border border-slate-300/80'
+                  : 'bg-black/[0.06] text-slate-600'
+              }`}
+            >
+              {disposedCardCount}
             </span>
           </button>
         </div>
@@ -1010,9 +1069,22 @@ export const App: React.FC = () => {
                 onUnfileRecord={handleUnfileRecord}
                 onUpdateDLRNumber={handleUpdateDLRNumber}
                 onToggleApproved={handleToggleApproved}
+                onToggleDisposed={handleToggleDisposed}
+              />
+            ) : pageView === 'disposed' ? (
+              /* Disposed DLRs Page */
+              <FiledDLRView
+                records={disposedRecords}
+                mode="disposed"
+                storeCode={session.storeCode}
+                onOpenImageModal={handleOpenImageModal}
+                onToast={addToast}
+                onUnfileRecord={handleUnfileRecord}
+                onUpdateDLRNumber={handleUpdateDLRNumber}
+                onToggleDisposed={handleToggleDisposed}
               />
             ) : (
-              /* Filed DLRs Page (Approved items excluded) */
+              /* Filed DLRs Page (Approved & Disposed items excluded) */
               <FiledDLRView
                 records={filedRecords}
                 mode="filed"
