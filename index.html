@@ -20,6 +20,44 @@
     <meta name="msapplication-TileColor" content="#ea2820" />
     
     <title>Daiso Damage &amp; Lost Report (DLR)</title>
+    <script>
+      // Self-heal stale Service Workers and cached HTML/chunks on deployment updates
+      (function () {
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (reg) {
+                reg.unregister();
+              });
+            });
+          }
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (key) {
+                if (key.indexOf('workbox') !== -1 || key.indexOf('supabase') !== -1) {
+                  caches.delete(key);
+                }
+              });
+            });
+          }
+          window.addEventListener(
+            'error',
+            function (e) {
+              var target = e.target || e.srcElement;
+              if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+                if (!sessionStorage.getItem('dlr_asset_retry')) {
+                  sessionStorage.setItem('dlr_asset_retry', '1');
+                  window.location.reload();
+                }
+              }
+            },
+            true
+          );
+        } catch (err) {
+          // ignore
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[#F5F5F7] text-[#1D1D1F] antialiased min-h-screen selection:bg-rose-600 selection:text-white [text-rendering:optimizeLegibility] [font-feature-settings:'cv02','cv03','cv04','cv11']">
     <div id="root"></div>

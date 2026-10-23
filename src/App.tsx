@@ -46,7 +46,18 @@ export const App: React.FC = () => {
       const saved =
         sessionStorage.getItem(SESSION_STORAGE_KEY) ||
         localStorage.getItem(SESSION_STORAGE_KEY);
-      return saved ? (JSON.parse(saved) as UserSession) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved) as Partial<UserSession> | null;
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        typeof parsed.storeCode === 'string' &&
+        parsed.storeCode.trim() !== '' &&
+        typeof parsed.name === 'string'
+      ) {
+        return parsed as UserSession;
+      }
+      return null;
     } catch {
       return null;
     }
